@@ -12,9 +12,10 @@ from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, FEMALE
 class SubjectScreening(BaseUuidModel):
 
     reference = models.UUIDField(
-        verbose_name="Anonymous Reference",
+        verbose_name="Reference",
         unique=True,
-        default=uuid4)
+        default=uuid4,
+        editable=False)
 
     screening_identifier = models.CharField(
         verbose_name='Screening Id',

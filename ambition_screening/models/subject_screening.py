@@ -14,9 +14,10 @@ from ..models import ConsentModelMixin, ScreeningIdentifierModelMixin
 class SubjectScreening(ConsentModelMixin, ScreeningIdentifierModelMixin, BaseUuidModel):
 
     reference = models.UUIDField(
-        verbose_name="Anonymous Reference",
+        verbose_name="Reference",
         unique=True,
-        default=uuid4)
+        default=uuid4,
+        editable=False)
 
     screening_identifier = models.CharField(
         verbose_name='Screening Id',

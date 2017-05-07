@@ -37,10 +37,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_crypto_fields.apps.AppConfig',
+    'django_revision.apps.AppConfig',
     'edc_base.apps.AppConfig',
     'edc_device.apps.AppConfig',
     'edc_protocol.apps.AppConfig',
     'edc_identifier.apps.AppConfig',
+    'ambition.apps.AppConfig',
+    'ambition.apps.EdcAppointmentAppConfig',
     'ambition_screening.apps.AppConfig',
 ]
 
@@ -123,3 +127,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+KEY_PATH = os.path.join(BASE_DIR, 'crypto_fields')

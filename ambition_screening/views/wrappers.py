@@ -49,5 +49,4 @@ class SubjectScreeningModelWrapper(ModelWrapper):
                         subject_screening=self._original_object,
                         version=self._original_object.consent_object.version)
                 consent = self.consent_model_wrapper_class(consent)
-        print(consent, 'consent====================')
         return consent

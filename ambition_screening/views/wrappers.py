@@ -1,5 +1,6 @@
 from django.apps import apps as django_apps
 
+from edc_base.utils import get_uuid
 from edc_dashboard.wrappers.model_wrapper import ModelWrapper
 from ambition_subject.views.wrappers import SubjectConsentModelWrapper
 
@@ -33,16 +34,20 @@ class SubjectScreeningModelWrapper(ModelWrapper):
         else:
             try:
                 model = self._original_object.consent_object.model
+                print(model, 'model')
             except AttributeError:
                 consent = None
             else:
-                consent = model(
-                    subject_identifier=self._original_object.subject_identifier,
-                    consent_identifier=get_uuid(),
-                    household_member=self._original_object,
-                    survey_schedule=self._original_object.survey_schedule_object.field_value,
-                    version=self._original_object.consent_object.version)
+                try:
+                    consent = model.objects.get(
+                        version=self._original_object.consent_object.version,
+                        subject_screening=self._original_object,)
+                except model.DoesNotExist:
+                    consent = model(
+                        subject_identifier=self._original_object.subject_identifier,
+                        consent_identifier=get_uuid(),
+                        subject_screening=self._original_object,
+                        version=self._original_object.consent_object.version)
                 consent = self.consent_model_wrapper_class(consent)
-        if consent:
-            consent = self.consent_model_wrapper_class(consent)
+        print(consent, 'consent====================')
         return consent

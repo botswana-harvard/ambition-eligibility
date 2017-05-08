@@ -9,7 +9,7 @@
 <td>
     {% if result.consent %}
     	 <a class="btn btn-success btn-sm" type="button"   
-       	href="{% url ambition_subject_dashboard_url_name screening_identifier=subject_screening.screening_identifier subject_identifier=subject_screening.subject_identifier %}">
+       	href="/subject/dashboard/{{result.subject_identifier}}/">
        	<i class="fa fa-user-circle-o fa-sm"></i> Dashboard</a>
 
     {% else %}

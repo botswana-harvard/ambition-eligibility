@@ -34,7 +34,6 @@ class SubjectScreeningModelWrapper(ModelWrapper):
         else:
             try:
                 model = self._original_object.consent_object.model
-                print(model, 'model')
             except AttributeError:
                 consent = None
             else:

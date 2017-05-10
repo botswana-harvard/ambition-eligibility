@@ -53,7 +53,6 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         choices=YES_NO,
         max_length=5,
         blank=True,
-        unique=True,
         verbose_name='Participant or legal guardian/representative able and '
                      'willing to give informed consent.')
 

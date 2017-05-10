@@ -1,11 +1,43 @@
 from django.apps import apps as django_apps
+from django.core.exceptions import ObjectDoesNotExist
 
 from edc_base.utils import get_uuid
+from edc_consent.site_consents import site_consents
 from edc_dashboard.wrappers.model_wrapper import ModelWrapper
+
 from ambition_subject.views.wrappers import SubjectConsentModelWrapper
 
 
-class SubjectScreeningModelWrapper(ModelWrapper):
+class ConsentMixin:
+
+    @property
+    def consent_object(self):
+        """Returns the consent model.
+        """
+        default_consent_group = django_apps.get_app_config(
+            'edc_consent').default_consent_group
+        consent_object = site_consents.get_consent(
+            report_datetime=self.report_datetime,
+            consent_group=default_consent_group)
+        return consent_object
+
+    @property
+    def consent(self):
+        """Returns a wrapped saved or unsaved consent.
+        """
+        try:
+            consent = self._original_object.subjectconsent_set.get(
+                version=self.consent_object.version)
+        except ObjectDoesNotExist:
+            consent = self.consent_object.model(
+                subject_identifier=self._original_object.subject_identifier,
+                consent_identifier=get_uuid(),
+                subject_screening=self._original_object,
+                version=self._original_object.consent_object.version)
+        return self.consent_model_wrapper_class(consent)
+
+
+class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
 
     model_name = 'ambition_screening.subjectscreening'
     next_url_name = django_apps.get_app_config(
@@ -18,34 +50,3 @@ class SubjectScreeningModelWrapper(ModelWrapper):
         'screening_identifier', 'sex']
 
     consent_model_wrapper_class = SubjectConsentModelWrapper
-
-    @property
-    def is_consented(self):
-        return self._original_object.is_consented
-
-    @property
-    def consent(self):
-        """Returns a wrapped saved or unsaved consent.
-        """
-        # FIXME: self._original_object.consent_object should
-        # return a consent object
-        if self._original_object.consent:
-            consent = self._original_object.consent
-        else:
-            try:
-                model = self._original_object.consent_object.model
-            except AttributeError:
-                consent = None
-            else:
-                try:
-                    consent = model.objects.get(
-                        version=self._original_object.consent_object.version,
-                        subject_screening=self._original_object,)
-                except model.DoesNotExist:
-                    consent = model(
-                        subject_identifier=self._original_object.subject_identifier,
-                        consent_identifier=get_uuid(),
-                        subject_screening=self._original_object,
-                        version=self._original_object.consent_object.version)
-                consent = self.consent_model_wrapper_class(consent)
-        return consent

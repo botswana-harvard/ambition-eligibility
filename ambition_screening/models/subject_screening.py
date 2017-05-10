@@ -8,11 +8,10 @@ from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
 from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, FEMALE
 
-from ..models import ConsentModelMixin
 from ..models.screening_identifier_model_mixin import ScreeningIdentifierModelMixin
 
 
-class SubjectScreening(ConsentModelMixin, ScreeningIdentifierModelMixin, BaseUuidModel):
+class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
 
     reference = models.UUIDField(
         verbose_name="Reference",

@@ -10,3 +10,7 @@ class AppConfig(DjangoAppConfig):
     base_template_name = 'edc_base/base.html'
     url_namespace = 'ambition_screening'  # FIXME: is this still neeed??
     admin_site_name = 'ambition_screening_admin'
+
+    screening_age_upper = 64
+    screening_age_lower = 18
+    screening_age_minor_lower = 15

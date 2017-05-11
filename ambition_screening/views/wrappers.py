@@ -5,7 +5,7 @@ from edc_base.utils import get_uuid
 from edc_consent.site_consents import site_consents
 from edc_dashboard.wrappers.model_wrapper import ModelWrapper
 
-from ambition_subject.views.wrappers import SubjectConsentModelWrapper
+# from ambition_subject.views.wrappers import SubjectConsentModelWrapper
 
 
 class ConsentMixin:
@@ -49,4 +49,4 @@ class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
     url_instance_attrs = [
         'screening_identifier', 'sex']
 
-    consent_model_wrapper_class = SubjectConsentModelWrapper
+#     consent_model_wrapper_class = SubjectConsentModelWrapper

@@ -24,30 +24,30 @@ class ModelAdminMixin(ModelAdminNextUrlRedirectMixin, ModelAdminFormInstructions
 class SubjectScreeningAdmin(ModelAdminMixin, admin.ModelAdmin):
 
     radio_fields = {
-        'sex': admin.VERTICAL,
-        'meningitis_diagoses_by_csf_or_crag': admin.VERTICAL,
-        'consent_to_hiv_test': admin.VERTICAL,
-        'willing_to_give_informed_consent': admin.VERTICAL,
+        'gender': admin.VERTICAL,
+        'meningitis_dx': admin.VERTICAL,
+        'will_hiv_test': admin.VERTICAL,
+        'guardian': admin.VERTICAL,
         'pregnancy_or_lactation': admin.VERTICAL,
-        'previous_adverse_drug_reaction': admin.VERTICAL,
-        'medication_contraindicated_with_study_drug': admin.VERTICAL,
-        'two_days_amphotericin_b': admin.VERTICAL,
-        'two_days_fluconazole': admin.VERTICAL, }
+        'previous_drug_reaction': admin.VERTICAL,
+        'contraindicated_meds': admin.VERTICAL,
+        'received_amphotericin': admin.VERTICAL,
+        'received_fluconazole': admin.VERTICAL, }
 
     fieldsets = (
         (None, {
             'fields': (
                 'report_datetime',
-                'sex',
-                'age',
-                'meningitis_diagoses_by_csf_or_crag',
-                'consent_to_hiv_test',
-                'willing_to_give_informed_consent',
+                'gender',
+                'age_in_years',
+                'meningitis_dx',
+                'will_hiv_test',
+                'guardian',
                 'pregnancy_or_lactation',
-                'previous_adverse_drug_reaction',
-                'medication_contraindicated_with_study_drug',
-                'two_days_amphotericin_b',
-                'two_days_fluconazole')
+                'previous_drug_reaction',
+                'contraindicated_meds',
+                'received_amphotericin',
+                'received_fluconazole')
         }),
     )
 

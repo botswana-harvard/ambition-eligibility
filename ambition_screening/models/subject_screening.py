@@ -8,6 +8,7 @@ from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
 from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, FEMALE
 
+from ..eligibility import Eligibility
 from ..models.screening_identifier_model_mixin import ScreeningIdentifierModelMixin
 
 
@@ -31,25 +32,25 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         default=get_utcnow,
         help_text='Date and time of report.')
 
-    sex = models.CharField(
+    gender = models.CharField(
         choices=GENDER,
         max_length=10)
 
-    age = models.IntegerField()
+    age_in_years = models.IntegerField()
 
-    meningitis_diagoses_by_csf_or_crag = models.CharField(
+    meningitis_dx = models.CharField(
         choices=YES_NO,
         max_length=5,
         verbose_name='First episode cryptococcal meningitis diagnosed by '
                      'either: CSF India Ink or CSF cryptococcal antigen '
                      '(CRAG)')
 
-    consent_to_hiv_test = models.CharField(
+    will_hiv_test = models.CharField(
         choices=YES_NO,
         max_length=5,
         verbose_name='Willing to consent to HIV test')
 
-    willing_to_give_informed_consent = models.CharField(
+    guardian = models.CharField(
         choices=YES_NO,
         max_length=5,
         blank=True,
@@ -61,35 +62,35 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         max_length=15,
         verbose_name='Pregnancy or lactation (Urine βhCG)')
 
-    previous_adverse_drug_reaction = models.CharField(
+    previous_drug_reaction = models.CharField(
         choices=YES_NO,
         max_length=5,
         verbose_name='Previous Adverse Drug Reaction (ADR) to study drug '
                      '(e.g. rash, drug induced blood abnormality)')
 
-    medication_contraindicated_with_study_drug = models.CharField(
+    contraindicated_meds = models.CharField(
         choices=YES_NO,
         max_length=5,
         verbose_name='Taking concomitant medication that is contra-indicated '
                      'with any study drug')
 
-    two_days_amphotericin_b = models.CharField(
+    received_amphotericin = models.CharField(
         choices=YES_NO,
         max_length=5,
         verbose_name='Has received >48 hours of Amphotericin B (AmB) therapy '
                      'prior to screening.')
 
-    two_days_fluconazole = models.CharField(
+    received_fluconazole = models.CharField(
         choices=YES_NO,
         max_length=5,
         verbose_name='Has received >48 hours of fluconazole treatment (> '
                      '400mg daily dose) prior to screening.')
 
-    is_eligible = models.BooleanField(
+    eligible = models.BooleanField(
         default=False,
         editable=False)
 
-    ineligibility = models.TextField(
+    reasons_ineligible = models.TextField(
         verbose_name="Reason not eligible",
         max_length=150,
         null=True,
@@ -98,50 +99,31 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
     history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
-        self.is_eligible, self.ineligibility = self.get_is_eligible()
-        if self.is_eligible and not self.value_is_screening_identifier():
-            self.screening_identifier = self.prepare_screening_identifier()
+        self.verify_eligibility()
+#         if self.eligible and not self.screening_identifier():
+#             self.screening_identifier = self.prepare_screening_identifier()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return (self.screening_identifier + self.sex + str(self.age))
+        return f'{self.screening_identifier} {self.gender} {self.age_in_years}'
 
-    def get_is_eligible(self):
-        error_message = []
-        # consent_config = site_consents.get_consent(
-        #    consent_model='ambition_subject.subjectconsent')
-        if (self.age < 18 and
-           self.willing_to_give_informed_consent == NO):
-            error_message.append(
-                'Participant is under 18')
+    def verify_eligibility(self):
+        def is_yes(value):
+            return True if value == YES else False
 
-        if self.sex == FEMALE and self.pregnancy_or_lactation == YES:
-            error_message.append('Participant is pregnant')
-
-        if self.previous_adverse_drug_reaction == YES:
-            error_message.append('Previous adverse drug reaction reported')
-
-        if self.medication_contraindicated_with_study_drug == YES:
-            error_message.append(
-                'Participant taking concomitant medication that is contra-'
-                'indicated with any study drug')
-
-        if self.two_days_amphotericin_b == YES:
-            error_message.append('Has received >48 hours of Amphotericin B')
-
-        if self.two_days_fluconazole == YES:
-            error_message.append(
-                'Has received >48 hours of fluconazole '
-                'treatment (> 400mg daily dose) prior to screening.')
-        is_eligible = False if error_message else True
-        return (is_eligible, ','.join(error_message))
-
-    def value_is_screening_identifier(self):
-        if not self.screening_identifier:
-            return False
-        if len(self.screening_identifier) == 7:
-            return True
-        return False
+        def is_no(value):
+            return True if value == NO else False
+        eligibility = Eligibility(
+            age=self.age_in_years,
+            gender=self.gender,
+            meningitis_dx=is_yes(self.meningitis_dx),
+            not_pregnant=is_no(self.pregnancy_or_lactation),
+            no_drug_reaction=is_no(self.previous_drug_reaction),
+            no_concomitant_meds=is_no(self.contraindicated_meds),
+            no_amphotericin=is_no(self.received_amphotericin),
+            no_fluconazole=is_no(self.received_fluconazole))
+        self.reasons_ineligible = ','.join(eligibility.reasons)
+        self.eligible = eligibility.eligible
 
     def prepare_screening_identifier(self):
         """Generate and returns a locally unique study screening

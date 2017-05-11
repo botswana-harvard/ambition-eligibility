@@ -9,8 +9,8 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,8 +43,8 @@ INSTALLED_APPS = [
     'edc_device.apps.AppConfig',
     'edc_protocol.apps.AppConfig',
     'edc_identifier.apps.AppConfig',
-    'ambition.apps.AppConfig',
-    'ambition.apps.EdcAppointmentAppConfig',
+#     'ambition.apps.AppConfig',
+#     'ambition.apps.EdcAppointmentAppConfig',
     'ambition_screening.apps.AppConfig',
 ]
 
@@ -108,7 +108,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+if 'test' in sys.argv and 'mysql' not in DATABASES.get('default').get('ENGINE'):
+    MIGRATION_MODULES = {
+        "ambition_screening": None, }
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 

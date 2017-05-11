@@ -4,7 +4,7 @@ from edc_constants.constants import YES, NO, MALE
 
 from .models import SubjectScreening
 
-subject_screening = Recipe(
+subjectscreening = Recipe(
     SubjectScreening,
     gender=MALE,
     age_in_years=40,

@@ -1,5 +1,3 @@
-import random
-
 from django.db import models
 from uuid import uuid4
 
@@ -10,6 +8,7 @@ from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES
 from edc_identifier.model_mixins import NonUniqueSubjectIdentifierFieldMixin
 
 from ..eligibility import Eligibility
+from ..identifier import ScreeningIdentifier
 
 
 class SubjectScreening(NonUniqueSubjectIdentifierFieldMixin, BaseUuidModel):
@@ -99,51 +98,34 @@ class SubjectScreening(NonUniqueSubjectIdentifierFieldMixin, BaseUuidModel):
     history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
-        if not self.subject_identifier:
-            self.subject_identifier = uuid4().hex
         self.verify_eligibility()
-#         if self.eligible and not self.screening_identifier():
-#             self.screening_identifier = self.prepare_screening_identifier()
+        if not self.id:
+            self.screening_identifier = ScreeningIdentifier().identifier
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.screening_identifier} {self.gender} {self.age_in_years}'
 
     def verify_eligibility(self):
-        def is_yes(value):
+        """Verifies eligibility criteria and sets model attrs.
+        """
+        def if_yes(value):
             return True if value == YES else False
 
-        def is_no(value):
+        def if_no(value):
             return True if value == NO else False
         eligibility = Eligibility(
             age=self.age_in_years,
             gender=self.gender,
-            meningitis_dx=is_yes(self.meningitis_dx),
-            not_pregnant=is_no(self.pregnancy_or_lactation),
-            no_drug_reaction=is_no(self.previous_drug_reaction),
-            no_concomitant_meds=is_no(self.contraindicated_meds),
-            no_amphotericin=is_no(self.received_amphotericin),
-            no_fluconazole=is_no(self.received_fluconazole))
+            guardian=if_yes(self.guardian),
+            meningitis_dx=if_yes(self.meningitis_dx),
+            pregnant=if_yes(self.pregnancy_or_lactation),
+            no_drug_reaction=if_no(self.previous_drug_reaction),
+            no_concomitant_meds=if_no(self.contraindicated_meds),
+            no_amphotericin=if_no(self.received_amphotericin),
+            no_fluconazole=if_no(self.received_fluconazole))
         self.reasons_ineligible = ','.join(eligibility.reasons)
         self.eligible = eligibility.eligible
-
-    def prepare_screening_identifier(self):
-        """Generate and returns a locally unique study screening
-        identifier"""
-        template = '{random_string}'
-        opts = {
-            'random_string': ''.join([random.choice('ABCDEFGHKMNPRTUVWXYZ2346789') for _ in range(7)])}
-        screening_identifier = template.format(**opts)
-        # look for a duplicate
-        if self.__class__.objects.filter(screening_identifier=screening_identifier):
-            n = 1
-            while self.__class__.objects.filter(screening_identifier=screening_identifier):
-                screening_identifier = template.format(**opts)
-                n += 1
-                if n == len('ABCDEFGHKMNPRTUVWXYZ2346789') ** 7:
-                    raise TypeError('Unable prepare a unique requisition identifier, '
-                                    'all are taken. Increase the length of the random string')
-        return screening_identifier
 
     class Meta:
         app_label = 'ambition_screening'

@@ -6,13 +6,13 @@ from uuid import uuid4
 from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
-from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, FEMALE
+from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES
+from edc_identifier.model_mixins import NonUniqueSubjectIdentifierFieldMixin
 
 from ..eligibility import Eligibility
-from ..models.screening_identifier_model_mixin import ScreeningIdentifierModelMixin
 
 
-class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
+class SubjectScreening(NonUniqueSubjectIdentifierFieldMixin, BaseUuidModel):
 
     reference = models.UUIDField(
         verbose_name="Reference",
@@ -99,6 +99,8 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
     history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
+        if not self.subject_identifier:
+            self.subject_identifier = uuid4().hex
         self.verify_eligibility()
 #         if self.eligible and not self.screening_identifier():
 #             self.screening_identifier = self.prepare_screening_identifier()

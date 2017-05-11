@@ -161,7 +161,7 @@ class TestSubjectScreening(TestCase):
         self.assertFalse(subject_screening.eligible)
 
     def test_subject_ineligible_previous_adverse_drug_reaction(self):
-        """Assert eligibility of a participant with a previous adverse 
+        """Assert eligibility of a participant with a previous adverse
         drug reaction.
         """
         options = {'previous_drug_reaction': YES}

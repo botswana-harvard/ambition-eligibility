@@ -6,7 +6,7 @@ from uuid import uuid4
 from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
-from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, FEMALE
+from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES
 
 from ..eligibility import Eligibility
 from ..models.screening_identifier_model_mixin import ScreeningIdentifierModelMixin

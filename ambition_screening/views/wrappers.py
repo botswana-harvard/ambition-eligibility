@@ -5,7 +5,7 @@ from edc_base.utils import get_uuid
 from edc_consent.site_consents import site_consents
 from edc_dashboard.wrappers.model_wrapper import ModelWrapper
 
-# from ambition_subject.views.wrappers import SubjectConsentModelWrapper
+from ambition_subject.views.wrappers import SubjectConsentModelWrapper
 
 
 class ConsentMixin:
@@ -25,6 +25,7 @@ class ConsentMixin:
     def consent(self):
         """Returns a wrapped saved or unsaved consent.
         """
+        consent_model_wrapper_class = SubjectConsentModelWrapper
         try:
             consent = self._original_object.subjectconsent_set.get(
                 version=self.consent_object.version)
@@ -33,8 +34,8 @@ class ConsentMixin:
                 subject_identifier=self._original_object.subject_identifier,
                 consent_identifier=get_uuid(),
                 subject_screening=self._original_object,
-                version=self._original_object.consent_object.version)
-        return self.consent_model_wrapper_class(consent)
+                version=self.consent_object.version)
+        return consent_model_wrapper_class(consent)
 
 
 class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
@@ -48,5 +49,3 @@ class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
         'ambition_screening.subjectscreening': ['sex']}
     url_instance_attrs = [
         'screening_identifier', 'sex']
-
-#     consent_model_wrapper_class = SubjectConsentModelWrapper

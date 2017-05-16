@@ -1,3 +1,4 @@
+import re
 from django.db import models
 from uuid import uuid4
 
@@ -5,13 +6,32 @@ from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
 from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES
-from edc_identifier.model_mixins import NonUniqueSubjectIdentifierFieldMixin
+from edc_constants.constants import UUID_PATTERN
+from edc_identifier.model_mixins import NonUniqueSubjectIdentifierModelMixin
 
 from ..eligibility import Eligibility
 from ..identifier import ScreeningIdentifier
 
 
-class SubjectScreening(NonUniqueSubjectIdentifierFieldMixin, BaseUuidModel):
+class ScreeningIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin, models.Model):
+
+    def update_subject_identifier_on_save(self):
+        """Overridden to not set the subject identifier on save.
+        """
+        if not self.subject_identifier:
+            self.subject_identifier = self.subject_identifier_as_pk.hex
+        elif re.match(UUID_PATTERN, self.subject_identifier):
+            pass
+        return self.subject_identifier
+
+    def make_new_identifier(self):
+        return self.subject_identifier_as_pk.hex
+
+    class Meta:
+        abstract = True
+
+
+class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
 
     reference = models.UUIDField(
         verbose_name="Reference",

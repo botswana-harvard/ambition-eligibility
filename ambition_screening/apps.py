@@ -11,6 +11,5 @@ class AppConfig(DjangoAppConfig):
     url_namespace = 'ambition_screening'  # FIXME: is this still neeed??
     admin_site_name = 'ambition_screening_admin'
 
-    screening_age_adult_upper = 64
+    screening_age_adult_upper = 99
     screening_age_adult_lower = 18
-    screening_age_minor_lower = 16

@@ -5,7 +5,8 @@ from uuid import uuid4
 from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
-from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES
+from edc_constants.choices import (
+    GENDER, YES_NO, YES_NO_NA, NO, YES, NORMAL_ABNORMAL)
 from edc_constants.constants import UUID_PATTERN
 from edc_identifier.model_mixins import NonUniqueSubjectIdentifierModelMixin
 
@@ -68,6 +69,12 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         choices=YES_NO,
         max_length=5,
         verbose_name='Willing to consent to HIV test')
+
+    mental_status = models.CharField(
+        choices=NORMAL_ABNORMAL,
+        max_length=5,
+        blank=True,
+        verbose_name='Mental Status')
 
     guardian = models.CharField(
         choices=YES_NO,
@@ -138,6 +145,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
             age=self.age_in_years,
             gender=self.gender,
             guardian=if_yes(self.guardian),
+            mental_status=self.mental_status,
             meningitis_dx=if_yes(self.meningitis_dx),
             pregnant=if_yes(self.pregnancy_or_lactation),
             no_drug_reaction=if_no(self.previous_drug_reaction),

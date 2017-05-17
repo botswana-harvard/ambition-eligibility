@@ -1,16 +1,46 @@
 from django.apps import apps as django_apps
 
-from edc_constants.constants import MALE, FEMALE
+from edc_constants.constants import MALE, FEMALE, NORMAL, ABNORMAL
+
+from edc_constants.choices import NORMAL_ABNORMAL
+
+
+class MentalStatusEvaluatorError(Exception):
+    pass
+
+
+class MentalStatusEvaluator:
+
+    def __init__(self, mental_status=None, guardian=None):
+        self.mental_status = mental_status
+        if self.mental_status not in [tpl[0] for tpl in NORMAL_ABNORMAL]:
+            raise MentalStatusEvaluatorError(
+                f'Invalid mental status. Got {self.mental_status}')
+        self.guardian = guardian
+
+    @property
+    def eligible(self):
+        eligible = False
+        if self.mental_status == NORMAL:
+            eligible = True
+        elif self.mental_status == ABNORMAL and self.guardian:
+            eligible = True
+        return eligible
+
+    @property
+    def reason(self):
+        reason = None
+        if not self.eligible:
+            reason = f'Mental status {self.mental_status}, no guardian.'
+        return reason
 
 
 class AgeEvaluator:
 
-    def __init__(self, age=None, guardian=None, adult_lower=None,
-                 adult_upper=None, minor_lower=None):
+    def __init__(self, age=None, adult_lower=None,
+                 adult_upper=None):
         app_config = django_apps.get_app_config('ambition_screening')
         self.age = age
-        self.guardian = guardian
-        self.minor_lower = minor_lower or app_config.screening_age_minor_lower
         self.adult_lower = adult_lower or app_config.screening_age_adult_lower
         self.adult_upper = adult_upper or app_config.screening_age_adult_upper
 
@@ -22,8 +52,6 @@ class AgeEvaluator:
         try:
             if self.adult_lower <= self.age <= self.adult_upper:
                 eligible = True
-            elif self.guardian and self.minor_lower <= self.age <= self.adult_lower:
-                eligible = True
         except TypeError:
             pass
         return eligible
@@ -32,11 +60,7 @@ class AgeEvaluator:
     def reason(self):
         reason = None
         if not self.eligible:
-            if self.age < self.minor_lower:
-                reason = f'age<{self.minor_lower}'
-            elif self.age < self.adult_lower and not self.guardian:
-                reason = f'age<{self.adult_lower}, no guardian'
-            elif self.age < self.adult_lower:
+            if self.age < self.adult_lower:
                 reason = f'age<{self.adult_lower}'
             elif self.age > self.adult_upper:
                 reason = f'age>{self.adult_upper}'
@@ -44,6 +68,7 @@ class AgeEvaluator:
 
 
 class GenderEvaluator:
+
     def __init__(self, gender=None, pregnant=None):
         self.gender = gender
         self.pregnant = pregnant
@@ -73,20 +98,25 @@ class GenderEvaluator:
 class Eligibility:
 
     def __init__(self, age=None, guardian=None, gender=None, pregnant=None,
-                 meningitis_dx=None, no_drug_reaction=None, no_concomitant_meds=None,
-                 no_amphotericin=None, no_fluconazole=None):
-        self.age_evaluator = AgeEvaluator(age=age, guardian=guardian)
-        self.gender_evaluator = GenderEvaluator(
+                 meningitis_dx=None, no_drug_reaction=None,
+                 no_concomitant_meds=None, no_amphotericin=None,
+                 no_fluconazole=None, mental_status=None):
+        self.age_evaluator = AgeEvaluator(age=age)
+        gender_evaluator = GenderEvaluator(
             gender=gender, pregnant=pregnant)
+        mental_status_evaluator = MentalStatusEvaluator(
+            mental_status=mental_status,
+            guardian=guardian)
         self.criteria = dict(
+            guardian=guardian,
             no_drug_reaction=no_drug_reaction,
             no_concomitant_meds=no_concomitant_meds,
             no_amphotericin=no_amphotericin,
             no_fluconazole=no_fluconazole,
-            meningitis_dx=meningitis_dx)
-        self.criteria.update(age=self.age_evaluator.eligible)
-        self.criteria.update(
-            gender=self.gender_evaluator.eligible)
+            meningitis_dx=meningitis_dx,
+            age=self.age_evaluator.eligible,
+            gender=gender_evaluator.eligible,
+            mental_status=mental_status_evaluator.eligible)
 
     @property
     def eligible(self):

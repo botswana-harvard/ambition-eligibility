@@ -3,41 +3,36 @@ from model_mommy import mommy
 from django.apps import apps as django_apps
 from django.test import TestCase, tag
 
-from edc_constants.constants import NO, FEMALE, YES, MALE
+from edc_constants.constants import FEMALE, YES, MALE, ABNORMAL, NORMAL, NO
 
-from ..eligibility import AgeEvaluator, GenderEvaluator, Eligibility
+from ..eligibility import (
+    AgeEvaluator, GenderEvaluator, Eligibility, MentalStatusEvaluator,
+    MentalStatusEvaluatorError)
 
 
 class TestSubjectScreening(TestCase):
 
     def setUp(self):
-        django_apps.app_configs['ambition_screening'].screening_age_adult_upper = 64
-        django_apps.app_configs['ambition_screening'].screening_age_adult_lower = 18
-        django_apps.app_configs['ambition_screening'].screening_age_minor_lower = 16
+        django_apps.app_configs[
+            'ambition_screening'].screening_age_adult_upper = 99
+        django_apps.app_configs[
+            'ambition_screening'].screening_age_adult_lower = 18
 
     def test_eligibility_invalid_age_in_years(self):
         age_evaluator = AgeEvaluator(age=17)
         self.assertFalse(age_evaluator.eligible)
-        age_evaluator = AgeEvaluator(age=65)
-        self.assertFalse(age_evaluator.eligible)
         age_evaluator = AgeEvaluator(age=18)
         self.assertTrue(age_evaluator.eligible)
-        age_evaluator = AgeEvaluator(age=64)
+        age_evaluator = AgeEvaluator(age=99)
         self.assertTrue(age_evaluator.eligible)
+        age_evaluator = AgeEvaluator(age=100)
+        self.assertFalse(age_evaluator.eligible)
 
     def test_eligibility_invalid_age_in_years_reasons(self):
         age_evaluator = AgeEvaluator(age=17)
-        self.assertIn('age<18, no guardian', age_evaluator.reason)
-        age_evaluator = AgeEvaluator(age=65)
-        self.assertIn('age>64', age_evaluator.reason)
-
-    def test_eligibility_minor_with_guardian(self):
-        age_evaluator = AgeEvaluator(age=17, guardian=True)
-        self.assertTrue(age_evaluator.eligible)
-
-    def test_eligibility_minor_without_guardian(self):
-        age_evaluator = AgeEvaluator(age=17)
-        self.assertFalse(age_evaluator.eligible)
+        self.assertIn('age<18', age_evaluator.reason)
+        age_evaluator = AgeEvaluator(age=100)
+        self.assertIn('age>99', age_evaluator.reason)
 
     def test_eligibility_gender(self):
         gender_evaluator = GenderEvaluator()
@@ -60,17 +55,20 @@ class TestSubjectScreening(TestCase):
     def test_eligibility(self):
         obj = Eligibility(
             age=18, gender=FEMALE, pregnant=False,
+            guardian=True,
             meningitis_dx=True,
             no_drug_reaction=True,
             no_concomitant_meds=True,
             no_amphotericin=True,
-            no_fluconazole=True)
+            no_fluconazole=True,
+            mental_status=NORMAL)
         self.assertTrue(obj.eligible)
         self.assertIsNone(obj.reasons or None)
 
     def test_not_eligible(self):
         obj = Eligibility(
             age=18, gender=FEMALE, pregnant=False,
+            mental_status=NORMAL,
             meningitis_dx=True,
             no_drug_reaction=True,
             no_concomitant_meds=True,
@@ -80,77 +78,45 @@ class TestSubjectScreening(TestCase):
         self.assertIsNotNone(obj.reasons)
 
     def test_eligibility_reasons(self):
-        obj = Eligibility(age=18, gender=FEMALE, pregnant=False)
+        obj = Eligibility(
+            age=18, gender=FEMALE, mental_status=ABNORMAL, pregnant=False)
         reasons = ['no_amphotericin', 'no_drug_reaction',
-                   'no_concomitant_meds', 'no_fluconazole', 'meningitis_dx']
+                   'no_concomitant_meds', 'no_fluconazole', 'meningitis_dx',
+                   'guardian', 'mental_status']
         reasons.sort()
         reasons1 = obj.reasons
         reasons1.sort()
         self.assertEqual(reasons, reasons1)
 
-    def test_subject_eligible(self):
+    def test_subject_eligible_with_mommy_default(self):
         """Asserts mommy recipe default criteria is eligible.
         """
         subject_screening = mommy.prepare_recipe(
             'ambition_screening.subjectscreening')
         self.assertTrue(subject_screening.eligible)
 
-    def test_subject_invalid_age_in_years(self):
+    def test_subject_invalid_age_in_years_lower(self):
         """Asserts mommy recipe default criteria is eligible.
         """
         subject_screening = mommy.prepare_recipe(
-            'ambition_screening.subjectscreening', age_in_years=2)
+            'ambition_screening.subjectscreening', age_in_years=17)
         subject_screening.verify_eligibility()
         self.assertFalse(subject_screening.eligible)
 
-    def test_subject_age_lt_minor_lower(self):
-        options = {'age_in_years': 15, 'guardian': NO}
+    def test_subject_age_minor_invalid_reason(self):
+        options = {'age_in_years': 17}
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening', **options)
         self.assertFalse(subject_screening.eligible)
         self.assertIn(
-            subject_screening.reasons_ineligible, 'age<16')
-        options = {'age_in_years': 15, 'guardian': YES}
-        subject_screening = mommy.make_recipe(
-            'ambition_screening.subjectscreening', **options)
-        self.assertFalse(subject_screening.eligible)
-        self.assertIn(
-            subject_screening.reasons_ineligible, 'age<16')
+            subject_screening.reasons_ineligible, 'age<18')
 
-    def test_subject_age_minor_no_guardian(self):
-        options = {'age_in_years': 16, 'guardian': NO}
-        subject_screening = mommy.make_recipe(
-            'ambition_screening.subjectscreening', **options)
-        self.assertFalse(subject_screening.eligible)
-        self.assertIn(
-            subject_screening.reasons_ineligible, 'age<18, no guardian')
-
-    @tag('erik')
-    def test_subject_age_minor_with_guardian_model(self):
-        options = {'age_in_years': 16, 'guardian': YES}
+    def test_subject_age_valid_no_reason(self):
+        options = {'age_in_years': 18}
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening', **options)
         self.assertTrue(subject_screening.eligible)
         self.assertEqual(subject_screening.reasons_ineligible, '')
-
-    def test_subject_age_lt_lower_adult(self):
-        options = {'age_in_years': 16, 'guardian': NO}
-        subject_screening = mommy.make_recipe(
-            'ambition_screening.subjectscreening', **options)
-        self.assertIn(
-            subject_screening.reasons_ineligible, 'age<18, no guardian')
-        self.assertFalse(subject_screening.eligible)
-
-    def test_subject_age_gt_upper_adult(self):
-        """Assert eligibility of a participant under age_in_years and no one willing
-        to give informed consent.
-        """
-        options = {'age_in_years': 65, 'guardian': NO}
-        subject_screening = mommy.make_recipe(
-            'ambition_screening.subjectscreening', **options)
-        self.assertIn(
-            subject_screening.reasons_ineligible, 'age>64')
-        self.assertFalse(subject_screening.eligible)
 
     def test_subject_ineligible_female_pregnant(self):
         """Assert not eligible if pregnant.
@@ -200,10 +166,42 @@ class TestSubjectScreening(TestCase):
         """Test subject screening id is not regenerated when resaving
            subject screening
         """
-        options = {'age_in_years': 19}
+        options = {'age_in_years': 18}
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening', **options)
         self.assertTrue(subject_screening.eligible)
         screening_id = subject_screening.screening_identifier
         subject_screening.save()
         self.assertEqual(subject_screening.screening_identifier, screening_id)
+
+    def test_mental_status_evaluator(self):
+        status = MentalStatusEvaluator(mental_status=NORMAL)
+        self.assertTrue(status.eligible)
+        status = MentalStatusEvaluator(mental_status=ABNORMAL)
+        self.assertFalse(status.eligible)
+        self.assertRaises(
+            MentalStatusEvaluatorError, MentalStatusEvaluator, mental_status='BLAH!')
+        self.assertRaises(
+            MentalStatusEvaluatorError, MentalStatusEvaluator, mental_status=None)
+
+    def test_mental_status__reason(self):
+        status = MentalStatusEvaluator(mental_status=ABNORMAL)
+        self.assertIn('Mental status ABNORMAL, no guardian.', status.reason)
+
+    def test_eligible_mental_status_normal(self):
+        subject_screening = mommy.make_recipe(
+            'ambition_screening.subjectscreening')
+        self.assertIn(subject_screening.mental_status, NORMAL)
+        self.assertTrue(subject_screening.eligible)
+
+    def test_ineligible_mental_abnormal(self):
+        subject_screening = mommy.make_recipe(
+            'ambition_screening.subjectscreening',
+            mental_status=ABNORMAL, guardian=NO)
+        self.assertFalse(subject_screening.eligible)
+
+    def test_eligible_mental_abnormal_with_guardian(self):
+        subject_screening = mommy.make_recipe(
+            'ambition_screening.subjectscreening',
+            mental_status=ABNORMAL, guardian=YES)
+        self.assertTrue(subject_screening.eligible)

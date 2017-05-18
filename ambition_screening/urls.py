@@ -5,7 +5,7 @@ from .views import ListBoardView
 from django.contrib import admin
 
 app_name = 'ambition_subject'
-screening_identifier = '^[0-9A-Z]{10}$'
+screening_identifier = 'S[0-9A-Z]{7}'
 
 admin.autodiscover()
 

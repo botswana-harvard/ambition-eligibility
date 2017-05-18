@@ -7,6 +7,7 @@ from edc_base.modeladmin_mixins import (
     ModelAdminReadOnlyMixin, ModelAdminInstitutionMixin)
 
 from .admin_site import ambition_screening_admin
+from .forms import SubjectScreeningForm
 from .models import SubjectScreening
 
 
@@ -23,10 +24,13 @@ class ModelAdminMixin(ModelAdminNextUrlRedirectMixin, ModelAdminFormInstructions
 @admin.register(SubjectScreening, site=ambition_screening_admin)
 class SubjectScreeningAdmin(ModelAdminMixin, admin.ModelAdmin):
 
+    form = SubjectScreeningForm
+
     radio_fields = {
         'gender': admin.VERTICAL,
         'meningitis_dx': admin.VERTICAL,
         'will_hiv_test': admin.VERTICAL,
+        'mental_status': admin.VERTICAL,
         'guardian': admin.VERTICAL,
         'pregnancy_or_lactation': admin.VERTICAL,
         'previous_drug_reaction': admin.VERTICAL,
@@ -42,8 +46,10 @@ class SubjectScreeningAdmin(ModelAdminMixin, admin.ModelAdmin):
                 'age_in_years',
                 'meningitis_dx',
                 'will_hiv_test',
+                'mental_status',
                 'guardian',
                 'pregnancy_or_lactation',
+                'preg_test_date',
                 'previous_drug_reaction',
                 'contraindicated_meds',
                 'received_amphotericin',

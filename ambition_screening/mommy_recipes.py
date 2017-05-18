@@ -1,6 +1,6 @@
 from model_mommy.recipe import Recipe
 
-from edc_constants.constants import YES, NO, MALE, NORMAL
+from edc_constants.constants import YES, NO, MALE, NORMAL, NOT_APPLICABLE
 
 from .models import SubjectScreening
 
@@ -12,7 +12,7 @@ subjectscreening = Recipe(
     will_hiv_test=YES,
     guardian=YES,
     mental_status=NORMAL,
-    pregnancy_or_lactation=NO,
+    pregnancy_or_lactation=NOT_APPLICABLE,
     previous_drug_reaction=NO,
     contraindicated_meds=NO,
     received_amphotericin=NO,

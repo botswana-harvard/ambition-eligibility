@@ -72,8 +72,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
 
     mental_status = models.CharField(
         choices=NORMAL_ABNORMAL,
-        max_length=5,
-        blank=True,
+        max_length=10,
         verbose_name='Mental Status')
 
     guardian = models.CharField(
@@ -87,6 +86,12 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         choices=YES_NO_NA,
         max_length=15,
         verbose_name='Pregnancy or lactation (Urine βhCG)')
+
+    preg_test_date = models.DateTimeField(
+        verbose_name="Pregnancy test date",
+        blank=True,
+        null=True,
+        help_text='')
 
     previous_drug_reaction = models.CharField(
         choices=YES_NO,

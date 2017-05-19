@@ -46,6 +46,6 @@ class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
     next_url_attrs = {
         'ambition_screening.subjectscreening': ['screening_identifier']}
     extra_querystring_attrs = {
-        'ambition_screening.subjectscreening': ['sex']}
+        'ambition_screening.subjectscreening': ['gender']}
     url_instance_attrs = [
-        'screening_identifier', 'sex']
+        'screening_identifier', 'gender']

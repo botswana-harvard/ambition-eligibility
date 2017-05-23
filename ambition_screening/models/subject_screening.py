@@ -68,7 +68,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
     will_hiv_test = models.CharField(
         choices=YES_NO,
         max_length=5,
-        verbose_name='Willing to consent to HIV test')
+        verbose_name='Known HIV positive/willing to consent to an HIV test.')
 
     mental_status = models.CharField(
         choices=NORMAL_ABNORMAL,

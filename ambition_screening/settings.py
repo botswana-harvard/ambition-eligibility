@@ -43,8 +43,7 @@ INSTALLED_APPS = [
     'edc_device.apps.AppConfig',
     'edc_protocol.apps.AppConfig',
     'edc_identifier.apps.AppConfig',
-    #     'ambition.apps.AppConfig',
-    #     'ambition.apps.EdcAppointmentAppConfig',
+    'edc_registration.apps.AppConfig',
     'ambition_screening.apps.AppConfig',
 ]
 
@@ -111,7 +110,8 @@ AUTH_PASSWORD_VALIDATORS = [
 if 'test' in sys.argv and 'mysql' not in DATABASES.get('default').get('ENGINE'):
     MIGRATION_MODULES = {
         "ambition_screening": None,
-        "edc_identifier": None}
+        "edc_identifier": None,
+        'edc_registration': None}
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 

@@ -69,9 +69,10 @@ class AgeEvaluator:
 
 class GenderEvaluator:
 
-    def __init__(self, gender=None, pregnant=None):
+    def __init__(self, gender=None, pregnant=None, breast_feeding=None):
         self.gender = gender
         self.pregnant = pregnant
+        self.breast_feeding = breast_feeding
 
     @property
     def eligible(self):
@@ -80,7 +81,7 @@ class GenderEvaluator:
         eligible = False
         if self.gender == MALE:
             eligible = True
-        elif self.gender == FEMALE and not self.pregnant:
+        elif self.gender == FEMALE and not self.pregnant and not self.breast_feeding:
             eligible = True
         return eligible
 
@@ -90,6 +91,8 @@ class GenderEvaluator:
         if not self.eligible:
             if self.pregnant:
                 reason = 'pregnant'
+            if self.breast_feeding:
+                reason = 'breastfeeding'
             if self.gender not in [MALE, FEMALE]:
                 reason = 'invalid gender'
         return reason
@@ -100,10 +103,10 @@ class Eligibility:
     def __init__(self, age=None, guardian=None, gender=None, pregnant=None,
                  meningitis_dx=None, no_drug_reaction=None,
                  no_concomitant_meds=None, no_amphotericin=None,
-                 no_fluconazole=None, mental_status=None):
+                 no_fluconazole=None, mental_status=None, breast_feeding=None):
         self.age_evaluator = AgeEvaluator(age=age)
         gender_evaluator = GenderEvaluator(
-            gender=gender, pregnant=pregnant)
+            gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
         mental_status_evaluator = MentalStatusEvaluator(
             mental_status=mental_status,
             guardian=guardian)

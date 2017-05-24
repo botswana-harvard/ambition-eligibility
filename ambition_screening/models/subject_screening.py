@@ -59,63 +59,70 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
     age_in_years = models.IntegerField()
 
     meningitis_dx = models.CharField(
-        choices=YES_NO,
-        max_length=5,
         verbose_name='First episode cryptococcal meningitis diagnosed by '
                      'either: CSF India Ink or CSF cryptococcal antigen '
-                     '(CRAG)')
+                     '(CRAG)',
+        choices=YES_NO,
+        max_length=5)
 
     will_hiv_test = models.CharField(
-        choices=YES_NO,
+        verbose_name='Known HIV positive/willing to consent to an HIV test.',
         max_length=5,
-        verbose_name='Known HIV positive/willing to consent to an HIV test.')
+        choices=YES_NO)
 
     mental_status = models.CharField(
-        choices=NORMAL_ABNORMAL,
+        verbose_name='Mental Status',
         max_length=10,
-        verbose_name='Mental Status')
+        choices=NORMAL_ABNORMAL)
 
     guardian = models.CharField(
-        choices=YES_NO,
-        max_length=5,
-        blank=True,
         verbose_name='Participant or legal guardian/representative able and '
-                     'willing to give informed consent.')
+                     'willing to give informed consent.',
+        max_length=5,
+        choices=YES_NO,
+        blank=True)
 
     pregnancy_or_lactation = models.CharField(
-        choices=YES_NO_NA,
+        verbose_name='Pregnancy or lactation (Urine βhCG)',
         max_length=15,
-        verbose_name='Pregnancy or lactation (Urine βhCG)')
+        choices=YES_NO_NA)
 
     preg_test_date = models.DateTimeField(
         verbose_name="Pregnancy test date",
         blank=True,
-        null=True,
-        help_text='')
+        null=True)
+
+    breast_feeding = models.CharField(
+        verbose_name='Is the patient breasfeeding?',
+        max_length=15,
+        choices=YES_NO_NA)
 
     previous_drug_reaction = models.CharField(
-        choices=YES_NO,
-        max_length=5,
         verbose_name='Previous Adverse Drug Reaction (ADR) to study drug '
-                     '(e.g. rash, drug induced blood abnormality)')
+                     '(e.g. rash, drug induced blood abnormality)',
+        max_length=5,
+        choices=YES_NO)
 
     contraindicated_meds = models.CharField(
-        choices=YES_NO,
-        max_length=5,
         verbose_name='Taking concomitant medication that is contra-indicated '
-                     'with any study drug')
+                     'with any study drug',
+        max_length=5,
+        choices=YES_NO,)
 
     received_amphotericin = models.CharField(
-        choices=YES_NO,
-        max_length=5,
         verbose_name='Has received >48 hours of Amphotericin B (AmB) therapy '
-                     'prior to screening.')
+                     'prior to screening.',
+        max_length=5,
+        choices=YES_NO,
+
+    )
 
     received_fluconazole = models.CharField(
-        choices=YES_NO,
-        max_length=5,
         verbose_name='Has received >48 hours of fluconazole treatment (> '
-                     '400mg daily dose) prior to screening.')
+                     '400mg daily dose) prior to screening.',
+        max_length=5,
+        choices=YES_NO,
+    )
 
     eligible = models.BooleanField(
         default=False,
@@ -153,6 +160,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
             mental_status=self.mental_status,
             meningitis_dx=if_yes(self.meningitis_dx),
             pregnant=if_yes(self.pregnancy_or_lactation),
+            breast_feeding=if_yes(self.breast_feeding),
             no_drug_reaction=if_no(self.previous_drug_reaction),
             no_concomitant_meds=if_no(self.contraindicated_meds),
             no_amphotericin=if_no(self.received_amphotericin),

@@ -42,6 +42,18 @@ class TestSubjectScreening(TestCase):
         gender_evaluator = GenderEvaluator(gender=MALE)
         self.assertTrue(gender_evaluator.eligible)
 
+        gender_evaluator = GenderEvaluator(
+            gender=FEMALE, pregnant=False, breast_feeding=True)
+        self.assertFalse(gender_evaluator.eligible)
+
+        gender_evaluator = GenderEvaluator(
+            gender=FEMALE, pregnant=True, breast_feeding=False)
+        self.assertFalse(gender_evaluator.eligible)
+
+        gender_evaluator = GenderEvaluator(
+            gender=FEMALE, pregnant=False, breast_feeding=False)
+        self.assertTrue(gender_evaluator.eligible)
+
     def test_eligibility_gender_reasons(self):
         gender_evaluator = GenderEvaluator()
         self.assertIn('invalid gender', gender_evaluator.reason)
@@ -204,4 +216,16 @@ class TestSubjectScreening(TestCase):
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening',
             mental_status=ABNORMAL, guardian=YES)
+        self.assertTrue(subject_screening.eligible)
+
+    def test_ineligible_breastfeeding(self):
+        subject_screening = mommy.make_recipe(
+            'ambition_screening.subjectscreening',
+            gender=FEMALE, pregnancy_or_lactation=NO, breast_feeding=YES)
+        self.assertFalse(subject_screening.eligible)
+
+    def test_eligible_breastfeeding_recipe(self):
+        subject_screening = mommy.make_recipe(
+            'ambition_screening.subjectscreening',
+            gender=FEMALE, pregnancy_or_lactation=NO, breast_feeding=NO)
         self.assertTrue(subject_screening.eligible)

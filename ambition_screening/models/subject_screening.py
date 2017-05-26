@@ -107,7 +107,9 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         verbose_name='Taking concomitant medication that is contra-indicated '
                      'with any study drug',
         max_length=5,
-        choices=YES_NO,)
+        choices=YES_NO,
+        help_text='Contraindicated Meds: Cisapride Pimozide,'
+        'Terfenadine Quinidine, Astemizole Erythromycin')
 
     received_amphotericin = models.CharField(
         verbose_name='Has received >48 hours of Amphotericin B (AmB) therapy '

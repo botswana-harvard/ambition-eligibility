@@ -3,7 +3,7 @@ from django import forms
 from edc_base.modelform_mixins import (
     CommonCleanModelFormMixin, ApplicableValidationMixin,
     RequiredFieldValidationMixin)
-from edc_constants.constants import YES, FEMALE, MALE, NO
+from edc_constants.constants import YES, FEMALE, MALE, NO, NOT_APPLICABLE
 
 # from ambition_subject.models import SubjectVisit
 
@@ -22,27 +22,17 @@ class SubjectScreeningForm(SubjectModelFormMixin):
 
     def clean(self):
         cleaned_data = super().clean()
+        condition = cleaned_data.get('gender') == FEMALE
+        self.required_if_true(
+            condition=condition, field_required='pregnancy_or_lactation')
+
         preg = cleaned_data.get('pregnancy_or_lactation') in [YES, NO]
         self.required_if_true(
-            preg,
+            condition=preg,
             field='pregnancy_or_lactation',
             field_required='preg_test_date')
-        self.validate_gender_pregancy()
+
         return cleaned_data
-
-    def validate_gender_pregancy(self):
-        cleaned_data = self.cleaned_data
-
-        if (cleaned_data.get('gender') in [MALE]
-                and cleaned_data.get('pregnancy_or_lactation') in [YES, NO]):
-            raise forms.ValidationError({
-                'pregnancy_or_lactation':
-                'Gender is MALE, pregnancy must be Not Applicable.'})
-        elif (cleaned_data.get('gender') in [FEMALE]
-              and cleaned_data.get('pregnancy_or_lactation') not in [YES, NO]):
-            raise forms.ValidationError({
-                'pregnancy_or_lactation':
-                'Gender is FEMALE, pregnancy must be either Yes or No.'})
 
     class Meta:
         model = SubjectScreening

@@ -93,8 +93,7 @@ class TestSubjectScreening(TestCase):
         obj = Eligibility(
             age=18, gender=FEMALE, mental_status=ABNORMAL, pregnant=False)
         reasons = ['no_amphotericin', 'no_drug_reaction',
-                   'no_concomitant_meds', 'no_fluconazole', 'meningitis_dx',
-                   'guardian', 'mental_status']
+                   'no_concomitant_meds', 'no_fluconazole', 'meningitis_dx', 'mental_status']
         reasons.sort()
         reasons1 = obj.reasons
         reasons1.sort()

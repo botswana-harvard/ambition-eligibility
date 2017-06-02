@@ -4,7 +4,7 @@ from .admin_site import ambition_screening_admin
 from .views import ListBoardView
 from django.contrib import admin
 
-app_name = 'ambition_subject'
+app_name = 'ambition_screening'
 screening_identifier = 'S[0-9A-Z]{7}'
 
 admin.autodiscover()

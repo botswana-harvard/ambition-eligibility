@@ -12,13 +12,13 @@
         Edit
     </a>
 </td>
-<td>{{ result.screening_identifier }}</td>
+<td>{{ result.screening_identifier }} </td>
 <td>
 	{% if not result.eligible %}
 		Not Eligible: {{ result.reasons_ineligible }}
     {% elif result.consent %}
     	 <a class="btn btn-success btn-sm" type="button"   
-       	href="/subject/dashboard/{{result.subject_identifier}}/">
+       	href="/subject/dashboard/{{result.consent.subject_identifier}}/">
        	<i class="fa fa-user-circle-o fa-sm"></i> Dashboard</a>
     {% else %}
          <a title="Consent to participate"
@@ -29,6 +29,6 @@
     {% endif %}
 </td>
 <td>{{ result.age_in_years }} yrs</td>
-<td>{{ result.modified }}</td>  
+<td>{{ result.object.modified|date:"Y-m-d H:i" }}</td>  
 <td>{{ result.hostname_created }}</td>
 <!--  end columns  -->

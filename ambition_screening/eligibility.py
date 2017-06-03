@@ -3,6 +3,7 @@ from django.apps import apps as django_apps
 from edc_constants.constants import MALE, FEMALE, NORMAL, ABNORMAL
 
 from edc_constants.choices import NORMAL_ABNORMAL
+from pprint import pprint
 
 
 class MentalStatusEvaluatorError(Exception):
@@ -105,20 +106,19 @@ class Eligibility:
                  no_concomitant_meds=None, no_amphotericin=None,
                  no_fluconazole=None, mental_status=None, breast_feeding=None):
         self.age_evaluator = AgeEvaluator(age=age)
-        gender_evaluator = GenderEvaluator(
+        self.gender_evaluator = GenderEvaluator(
             gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
         mental_status_evaluator = MentalStatusEvaluator(
             mental_status=mental_status,
             guardian=guardian)
         self.criteria = dict(
-            guardian=guardian,
             no_drug_reaction=no_drug_reaction,
             no_concomitant_meds=no_concomitant_meds,
             no_amphotericin=no_amphotericin,
             no_fluconazole=no_fluconazole,
             meningitis_dx=meningitis_dx,
             age=self.age_evaluator.eligible,
-            gender=gender_evaluator.eligible,
+            gender=self.gender_evaluator.eligible,
             mental_status=mental_status_evaluator.eligible)
 
     @property
@@ -135,4 +135,7 @@ class Eligibility:
         if self.age_evaluator.reason:
             reasons.pop(reasons.index('age'))
             reasons.append(self.age_evaluator.reason)
+        if self.gender_evaluator.reason:
+            reasons.pop(reasons.index('gender'))
+            reasons.append(self.gender_evaluator.reason)
         return reasons

@@ -17,7 +17,7 @@ class ConsentMixin:
         default_consent_group = django_apps.get_app_config(
             'edc_consent').default_consent_group
         consent_object = site_consents.get_consent(
-            report_datetime=self.report_datetime,
+            report_datetime=self.object.report_datetime,
             consent_group=default_consent_group)
         return consent_object
 
@@ -27,25 +27,22 @@ class ConsentMixin:
         """
         consent_model_wrapper_class = SubjectConsentModelWrapper
         try:
-            consent = self._original_object.subjectconsent_set.get(
+            consent = self.object.subjectconsent_set.get(
                 version=self.consent_object.version)
         except ObjectDoesNotExist:
             consent = self.consent_object.model(
-                subject_identifier=self._original_object.subject_identifier,
+                subject_identifier=self.object.subject_identifier,
                 consent_identifier=get_uuid(),
-                subject_screening=self._original_object,
+                subject_screening=self.object,
                 version=self.consent_object.version)
         return consent_model_wrapper_class(consent)
 
 
 class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
 
-    model_name = 'ambition_screening.subjectscreening'
+    model = 'ambition_screening.subjectscreening'
     next_url_name = django_apps.get_app_config(
         'ambition_screening').listboard_url_name
-    next_url_attrs = {
-        'ambition_screening.subjectscreening': ['screening_identifier']}
-    extra_querystring_attrs = {
-        'ambition_screening.subjectscreening': ['gender']}
-    url_instance_attrs = [
-        'screening_identifier', 'gender']
+    next_url_attrs = ['screening_identifier']
+    querystring_attrs = ['gender']
+    url_instance_attrs = ['screening_identifier', 'gender']

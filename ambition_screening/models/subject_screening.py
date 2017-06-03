@@ -1,12 +1,12 @@
 import re
+
 from django.db import models
 from uuid import uuid4
 
 from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
-from edc_constants.choices import (
-    GENDER, YES_NO, YES_NO_NA, NO, YES, NORMAL_ABNORMAL)
+from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, NORMAL_ABNORMAL
 from edc_constants.constants import UUID_PATTERN
 from edc_identifier.model_mixins import NonUniqueSubjectIdentifierModelMixin
 

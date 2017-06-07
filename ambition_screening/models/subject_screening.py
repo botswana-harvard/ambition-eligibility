@@ -155,6 +155,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
 
         def if_no(value):
             return True if value == NO else False
+
         eligibility = Eligibility(
             age=self.age_in_years,
             gender=self.gender,

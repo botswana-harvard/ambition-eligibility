@@ -20,7 +20,6 @@ class ListBoardView(AppConfigViewMixin, EdcBaseViewMixin, ListboardView):
     listboard_url_name = django_apps.get_app_config(
         'ambition_screening').listboard_url_name
     paginate_by = 10
-#     navbar_name = 'ambition_screening'
     navbar_item_selected = 'ambition_screening'
     app_config_name = 'ambition_screening'
     ordering = '-modified'

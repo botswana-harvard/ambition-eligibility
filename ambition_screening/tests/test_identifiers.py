@@ -1,11 +1,12 @@
-from django.test.testcases import TestCase
+from django.test import TestCase, tag
 
 from model_mommy import mommy
 
 from ..identifier import ScreeningIdentifier
-from ambition_screening.models.identifier_history import IdentifierHistory
+from ..models import IdentifierHistory
 
 
+@tag('identifier')
 class TestIdentifiers(TestCase):
 
     def test_identifier(self):

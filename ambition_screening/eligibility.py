@@ -1,9 +1,7 @@
 from django.apps import apps as django_apps
 
-from edc_constants.constants import MALE, FEMALE, NORMAL, ABNORMAL
-
 from edc_constants.choices import NORMAL_ABNORMAL
-from pprint import pprint
+from edc_constants.constants import MALE, FEMALE, NORMAL, ABNORMAL
 
 
 class MentalStatusEvaluatorError(Exception):
@@ -41,101 +39,72 @@ class AgeEvaluator:
     def __init__(self, age=None, adult_lower=None,
                  adult_upper=None):
         app_config = django_apps.get_app_config('ambition_screening')
-        self.age = age
-        self.adult_lower = adult_lower or app_config.screening_age_adult_lower
-        self.adult_upper = adult_upper or app_config.screening_age_adult_upper
+        adult_lower = adult_lower or app_config.screening_age_adult_lower
+        adult_upper = adult_upper or app_config.screening_age_adult_upper
 
-    @property
-    def eligible(self):
-        """Returns True if within age range.
-        """
-        eligible = False
+        self.eligible = False
         try:
-            if self.adult_lower <= self.age <= self.adult_upper:
-                eligible = True
+            if adult_lower <= age <= adult_upper:
+                self.eligible = True
         except TypeError:
             pass
-        return eligible
-
-    @property
-    def reason(self):
-        reason = None
+        self.reason = None
         if not self.eligible:
-            if self.age < self.adult_lower:
-                reason = f'age<{self.adult_lower}'
-            elif self.age > self.adult_upper:
-                reason = f'age>{self.adult_upper}'
-        return reason
+            if age < adult_lower:
+                self.reason = f'age<{adult_lower}'
+            elif age > adult_upper:
+                self.reason = f'age>{adult_upper}'
 
 
 class GenderEvaluator:
+    """Eligible if gender is valid and female not pregnant.
+    """
 
     def __init__(self, gender=None, pregnant=None, breast_feeding=None):
-        self.gender = gender
-        self.pregnant = pregnant
-        self.breast_feeding = breast_feeding
-
-    @property
-    def eligible(self):
-        """Returns True if gender is valid and female not pregnant.
-        """
-        eligible = False
-        if self.gender == MALE:
-            eligible = True
-        elif self.gender == FEMALE and not self.pregnant and not self.breast_feeding:
-            eligible = True
-        return eligible
-
-    @property
-    def reason(self):
-        reason = None
+        self.eligible = False
+        self.reason = None
+        if gender == MALE:
+            self.eligible = True
+        elif gender == FEMALE and not pregnant and not breast_feeding:
+            self.eligible = True
         if not self.eligible:
-            if self.pregnant:
-                reason = 'pregnant'
-            if self.breast_feeding:
-                reason = 'breastfeeding'
-            if self.gender not in [MALE, FEMALE]:
-                reason = 'invalid gender'
-        return reason
+            if pregnant:
+                self.reason = 'pregnant'
+            if breast_feeding:
+                self.reason = 'breastfeeding'
+            if gender not in [MALE, FEMALE]:
+                self.reason = 'invalid gender'
 
 
 class Eligibility:
+
+    """Eligible if all criteria evaluate True.
+    """
 
     def __init__(self, age=None, guardian=None, gender=None, pregnant=None,
                  meningitis_dx=None, no_drug_reaction=None,
                  no_concomitant_meds=None, no_amphotericin=None,
                  no_fluconazole=None, mental_status=None, breast_feeding=None):
-        self.age_evaluator = AgeEvaluator(age=age)
-        self.gender_evaluator = GenderEvaluator(
+        age_evaluator = AgeEvaluator(age=age)
+        gender_evaluator = GenderEvaluator(
             gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
         mental_status_evaluator = MentalStatusEvaluator(
             mental_status=mental_status,
             guardian=guardian)
-        self.criteria = dict(
+        criteria = dict(
             no_drug_reaction=no_drug_reaction,
             no_concomitant_meds=no_concomitant_meds,
             no_amphotericin=no_amphotericin,
             no_fluconazole=no_fluconazole,
             meningitis_dx=meningitis_dx,
-            age=self.age_evaluator.eligible,
-            gender=self.gender_evaluator.eligible,
+            age=age_evaluator.eligible,
+            gender=gender_evaluator.eligible,
             mental_status=mental_status_evaluator.eligible)
-
-    @property
-    def eligible(self):
-        """Returns True if all criteria evaluate True.
-        """
-        return all(self.criteria.values())
-
-    @property
-    def reasons(self):
-        """Returns a list of reason not eligible.
-        """
-        reasons = [k for k, v in self.criteria.items() if not v]
-        if self.age_evaluator.reason:
-            reasons.pop(reasons.index('age'))
-            reasons.append(self.age_evaluator.reason)
-        if self.gender_evaluator.reason:
-            reasons.pop(reasons.index('gender'))
-            reasons.append(self.gender_evaluator.reason)
-        return reasons
+        self.eligible = all(criteria.values())
+        self.reasons = [k for k, v in criteria.items() if not v]
+        if age_evaluator.reason:
+            self.reasons.pop(self.reasons.index('age'))
+            self.reasons.append(age_evaluator.reason)
+        if gender_evaluator.reason:
+            self.reasons.pop(self.reasons.index('gender'))
+            self.reasons.append(gender_evaluator.reason)

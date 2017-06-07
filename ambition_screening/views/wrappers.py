@@ -5,7 +5,9 @@ from edc_base.utils import get_uuid
 from edc_consent.site_consents import site_consents
 from edc_model_wrapper import ModelWrapper
 
-from ambition_subject.views.wrappers import SubjectConsentModelWrapper
+# this is bad. Means all of ambition subject needs to be imported
+# just for this.
+from ambition_subject.views import SubjectConsentModelWrapper
 
 
 class ConsentMixin:

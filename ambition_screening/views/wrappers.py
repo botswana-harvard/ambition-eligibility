@@ -47,4 +47,3 @@ class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):
         'ambition_screening').listboard_url_name
     next_url_attrs = ['screening_identifier']
     querystring_attrs = ['gender']
-    url_instance_attrs = ['screening_identifier', 'gender']

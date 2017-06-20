@@ -79,8 +79,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         verbose_name='Participant or legal guardian/representative able and '
                      'willing to give informed consent.',
         max_length=5,
-        choices=YES_NO,
-        blank=True)
+        choices=YES_NO)
 
     pregnancy_or_lactation = models.CharField(
         verbose_name='Pregnancy or lactation (Urine βhCG)',

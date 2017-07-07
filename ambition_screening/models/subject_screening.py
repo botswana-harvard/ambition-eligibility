@@ -14,6 +14,12 @@ from ..eligibility import Eligibility
 from ..identifier import ScreeningIdentifier
 
 
+class SubjectScreeningManager(models.Manager):
+
+    def get_by_natural_key(self, screening_identifier):
+        return self.get(screening_identifier=screening_identifier)
+
+
 class ScreeningIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin, models.Model):
 
     def update_subject_identifier_on_save(self):
@@ -135,7 +141,12 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         null=True,
         editable=False)
 
+    objects = SubjectScreeningManager()
+
     history = HistoricalRecords()
+
+    def natural_key(self):
+        return (self.screening_identifier,)
 
     def save(self, *args, **kwargs):
         self.verify_eligibility()

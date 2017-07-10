@@ -10,6 +10,7 @@ from ..eligibility import (
     MentalStatusEvaluatorError)
 
 
+@tag('eligible')
 class TestSubjectScreening(TestCase):
 
     def setUp(self):
@@ -91,9 +92,13 @@ class TestSubjectScreening(TestCase):
 
     def test_eligibility_reasons(self):
         obj = Eligibility(
-            age=18, gender=FEMALE, mental_status=ABNORMAL, pregnant=False)
+            age=18, gender=FEMALE,
+            mental_status=ABNORMAL,
+            guardian=YES,
+            pregnant=False)
         reasons = ['no_amphotericin', 'no_drug_reaction',
-                   'no_concomitant_meds', 'no_fluconazole', 'meningitis_dx', 'mental_status']
+                   'no_concomitant_meds', 'no_fluconazole',
+                   'meningitis_dx']
         reasons.sort()
         reasons1 = obj.reasons
         reasons1.sort()
@@ -188,7 +193,9 @@ class TestSubjectScreening(TestCase):
     def test_mental_status_evaluator(self):
         status = MentalStatusEvaluator(mental_status=NORMAL)
         self.assertTrue(status.eligible)
-        status = MentalStatusEvaluator(mental_status=ABNORMAL)
+        status = MentalStatusEvaluator(mental_status=ABNORMAL, guardian=True)
+        self.assertTrue(status.eligible)
+        status = MentalStatusEvaluator(mental_status=ABNORMAL, guardian=False)
         self.assertFalse(status.eligible)
         self.assertRaises(
             MentalStatusEvaluatorError, MentalStatusEvaluator, mental_status='BLAH!')
@@ -197,7 +204,8 @@ class TestSubjectScreening(TestCase):
 
     def test_mental_status__reason(self):
         status = MentalStatusEvaluator(mental_status=ABNORMAL)
-        self.assertIn('Mental status ABNORMAL, no guardian.', status.reason)
+        self.assertIn(
+            'Mental status ABNORMAL. Unable to consent.', status.reason)
 
     def test_eligible_mental_status_normal(self):
         subject_screening = mommy.make_recipe(
@@ -214,7 +222,8 @@ class TestSubjectScreening(TestCase):
     def test_eligible_mental_abnormal_with_guardian(self):
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening',
-            mental_status=ABNORMAL, guardian=YES)
+            mental_status=ABNORMAL,
+            guardian=YES)
         self.assertTrue(subject_screening.eligible)
 
     def test_ineligible_breastfeeding(self):

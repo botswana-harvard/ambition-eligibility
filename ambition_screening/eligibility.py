@@ -1,7 +1,7 @@
 from django.apps import apps as django_apps
 
 from edc_constants.choices import NORMAL_ABNORMAL
-from edc_constants.constants import MALE, FEMALE, NORMAL, ABNORMAL
+from edc_constants.constants import ABNORMAL, MALE, FEMALE, NORMAL, YES, NO
 
 
 class MentalStatusEvaluatorError(Exception):
@@ -19,18 +19,14 @@ class MentalStatusEvaluator:
 
     @property
     def eligible(self):
-        eligible = False
-        if self.mental_status == NORMAL:
-            eligible = True
-        elif self.mental_status == ABNORMAL and self.guardian:
-            eligible = True
-        return eligible
+        return self.mental_status == NORMAL or (
+            self.mental_status == ABNORMAL and self.guardian == YES)
 
     @property
     def reason(self):
         reason = None
-        if not self.eligible:
-            reason = f'Mental status {self.mental_status}, no guardian.'
+        if not self.eligible and self.guardian == NO:
+            reason = f'Unable to consent.'
         return reason
 
 

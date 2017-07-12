@@ -81,7 +81,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         max_length=10,
         choices=NORMAL_ABNORMAL)
 
-    guardian = models.CharField(
+    consent_ability = models.CharField(
         verbose_name='Participant or legal guardian/representative able and '
                      'willing to give informed consent.',
         max_length=5,
@@ -169,7 +169,7 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         eligibility = Eligibility(
             age=self.age_in_years,
             gender=self.gender,
-            guardian=if_yes(self.guardian),
+            consent_ability=if_yes(self.consent_ability),
             mental_status=self.mental_status,
             meningitis_dx=if_yes(self.meningitis_dx),
             pregnant=if_yes(self.pregnancy_or_lactation),

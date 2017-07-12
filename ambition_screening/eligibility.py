@@ -1,32 +1,31 @@
 from django.apps import apps as django_apps
 
 from edc_constants.choices import NORMAL_ABNORMAL
-from edc_constants.constants import ABNORMAL, MALE, FEMALE, NORMAL
+from edc_constants.constants import MALE, FEMALE
 
 
 class MentalStatusEvaluatorError(Exception):
     pass
 
 
-class MentalStatusEvaluator:
+class ConsentAbilityEvaluator:
 
-    def __init__(self, mental_status=None, guardian=None):
+    def __init__(self, mental_status=None, consent_ability=None):
         self.mental_status = mental_status
         if self.mental_status not in [tpl[0] for tpl in NORMAL_ABNORMAL]:
             raise MentalStatusEvaluatorError(
                 f'Invalid mental status. Got {self.mental_status}')
-        self.guardian = guardian
+        self.consent_ability = consent_ability
 
     @property
     def eligible(self):
-        return self.mental_status == NORMAL or (
-            self.mental_status == ABNORMAL and self.guardian)
+        return self.consent_ability
 
     @property
     def reason(self):
         reason = None
-        if not self.eligible and not self.guardian:
-            reason = f'Mental status {self.mental_status}. Unable to consent.'
+        if not self.eligible:
+            reason = 'Unable to consent.'
         return reason
 
 
@@ -77,16 +76,16 @@ class Eligibility:
     """Eligible if all criteria evaluate True.
     """
 
-    def __init__(self, age=None, guardian=None, gender=None, pregnant=None,
+    def __init__(self, age=None, consent_ability=None, gender=None, pregnant=None,
                  meningitis_dx=None, no_drug_reaction=None,
                  no_concomitant_meds=None, no_amphotericin=None,
                  no_fluconazole=None, mental_status=None, breast_feeding=None):
         age_evaluator = AgeEvaluator(age=age)
         gender_evaluator = GenderEvaluator(
             gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
-        mental_status_evaluator = MentalStatusEvaluator(
+        consent_ability_evaluator = ConsentAbilityEvaluator(
             mental_status=mental_status,
-            guardian=guardian)
+            consent_ability=consent_ability)
         criteria = dict(
             no_drug_reaction=no_drug_reaction,
             no_concomitant_meds=no_concomitant_meds,
@@ -95,12 +94,12 @@ class Eligibility:
             meningitis_dx=meningitis_dx,
             age=age_evaluator.eligible,
             gender=gender_evaluator.eligible,
-            mental_status=mental_status_evaluator.eligible)
+            consent_ability=consent_ability_evaluator.eligible)
         self.eligible = all(criteria.values())
         self.reasons = [k for k, v in criteria.items() if not v]
-        if mental_status_evaluator.reason:
-            self.reasons.pop(self.reasons.index('mental_status'))
-            self.reasons.append(mental_status_evaluator.reason)
+        if consent_ability_evaluator.reason:
+            self.reasons.pop(self.reasons.index('consent_ability'))
+            self.reasons.append(consent_ability_evaluator.reason)
         if age_evaluator.reason:
             self.reasons.pop(self.reasons.index('age'))
             self.reasons.append(age_evaluator.reason)

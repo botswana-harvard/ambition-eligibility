@@ -6,7 +6,7 @@ from django.test import TestCase, tag
 from edc_constants.constants import FEMALE, YES, MALE, ABNORMAL, NORMAL, NO
 
 from ..eligibility import (
-    AgeEvaluator, GenderEvaluator, Eligibility, MentalStatusEvaluator,
+    AgeEvaluator, GenderEvaluator, Eligibility, ConsentAbilityEvaluator,
     MentalStatusEvaluatorError)
 
 
@@ -68,7 +68,7 @@ class TestSubjectScreening(TestCase):
     def test_eligibility(self):
         obj = Eligibility(
             age=18, gender=FEMALE, pregnant=False,
-            guardian=True,
+            consent_ability=True,
             meningitis_dx=True,
             no_drug_reaction=True,
             no_concomitant_meds=True,
@@ -94,7 +94,7 @@ class TestSubjectScreening(TestCase):
         obj = Eligibility(
             age=18, gender=FEMALE,
             mental_status=ABNORMAL,
-            guardian=YES,
+            consent_ability=YES,
             pregnant=False)
         reasons = ['no_amphotericin', 'no_drug_reaction',
                    'no_concomitant_meds', 'no_fluconazole',
@@ -191,21 +191,27 @@ class TestSubjectScreening(TestCase):
         self.assertEqual(subject_screening.screening_identifier, screening_id)
 
     def test_mental_status_evaluator(self):
-        status = MentalStatusEvaluator(mental_status=NORMAL)
+        status = ConsentAbilityEvaluator(
+            mental_status=NORMAL, consent_ability=True)
         self.assertTrue(status.eligible)
-        status = MentalStatusEvaluator(mental_status=ABNORMAL, guardian=True)
+        status = ConsentAbilityEvaluator(
+            mental_status=ABNORMAL, consent_ability=True)
         self.assertTrue(status.eligible)
-        status = MentalStatusEvaluator(mental_status=ABNORMAL, guardian=False)
+        status = ConsentAbilityEvaluator(
+            mental_status=ABNORMAL, consent_ability=False)
+        self.assertFalse(status.eligible)
+        status = ConsentAbilityEvaluator(
+            mental_status=NORMAL, consent_ability=False)
         self.assertFalse(status.eligible)
         self.assertRaises(
-            MentalStatusEvaluatorError, MentalStatusEvaluator, mental_status='BLAH!')
+            MentalStatusEvaluatorError, ConsentAbilityEvaluator, mental_status='BLAH!')
         self.assertRaises(
-            MentalStatusEvaluatorError, MentalStatusEvaluator, mental_status=None)
+            MentalStatusEvaluatorError, ConsentAbilityEvaluator, mental_status=None)
 
     def test_mental_status__reason(self):
-        status = MentalStatusEvaluator(mental_status=ABNORMAL)
+        status = ConsentAbilityEvaluator(mental_status=ABNORMAL)
         self.assertIn(
-            'Mental status ABNORMAL. Unable to consent.', status.reason)
+            'Unable to consent.', status.reason)
 
     def test_eligible_mental_status_normal(self):
         subject_screening = mommy.make_recipe(
@@ -216,14 +222,14 @@ class TestSubjectScreening(TestCase):
     def test_ineligible_mental_abnormal(self):
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening',
-            mental_status=ABNORMAL, guardian=NO)
+            mental_status=ABNORMAL, consent_ability=NO)
         self.assertFalse(subject_screening.eligible)
 
     def test_eligible_mental_abnormal_with_guardian(self):
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening',
             mental_status=ABNORMAL,
-            guardian=YES)
+            consent_ability=YES)
         self.assertTrue(subject_screening.eligible)
 
     def test_ineligible_breastfeeding(self):

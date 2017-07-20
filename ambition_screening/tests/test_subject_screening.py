@@ -1,7 +1,7 @@
 from model_mommy import mommy
 
 from django.apps import apps as django_apps
-from django.test import TestCase, tag
+from django.test import TestCase
 
 from edc_constants.constants import FEMALE, YES, MALE, ABNORMAL, NORMAL, NO
 

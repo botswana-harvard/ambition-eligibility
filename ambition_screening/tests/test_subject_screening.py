@@ -10,7 +10,6 @@ from ..eligibility import (
     MentalStatusEvaluatorError)
 
 
-@tag('eligible')
 class TestSubjectScreening(TestCase):
 
     def setUp(self):
@@ -94,11 +93,11 @@ class TestSubjectScreening(TestCase):
         obj = Eligibility(
             age=18, gender=FEMALE,
             mental_status=ABNORMAL,
-            consent_ability=YES,
+            consent_ability=False,
             pregnant=False)
-        reasons = ['no_amphotericin', 'no_drug_reaction',
-                   'no_concomitant_meds', 'no_fluconazole',
-                   'meningitis_dx']
+        reasons = ['no_drug_reaction', 'no_concomitant_meds',
+                   'Unable to consent.', 'Previous Hx of Cryptococcal Meningitis',
+                   '> 48hrs of Amphotericin B', '> 48hrs of Fluconazole']
         reasons.sort()
         reasons1 = obj.reasons
         reasons1.sort()
@@ -208,7 +207,7 @@ class TestSubjectScreening(TestCase):
         self.assertRaises(
             MentalStatusEvaluatorError, ConsentAbilityEvaluator, mental_status=None)
 
-    def test_mental_status__reason(self):
+    def test_mental_status_reason(self):
         status = ConsentAbilityEvaluator(mental_status=ABNORMAL)
         self.assertIn(
             'Unable to consent.', status.reason)
@@ -225,7 +224,7 @@ class TestSubjectScreening(TestCase):
             mental_status=ABNORMAL, consent_ability=NO)
         self.assertFalse(subject_screening.eligible)
 
-    def test_eligible_mental_abnormal_with_guardian(self):
+    def test_eligible_mental_abnormal_with_consent_ability(self):
         subject_screening = mommy.make_recipe(
             'ambition_screening.subjectscreening',
             mental_status=ABNORMAL,

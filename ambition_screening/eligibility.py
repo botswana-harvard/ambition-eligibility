@@ -106,3 +106,12 @@ class Eligibility:
         if gender_evaluator.reason:
             self.reasons.pop(self.reasons.index('gender'))
             self.reasons.append(gender_evaluator.reason)
+        if not meningitis_dx:
+            self.reasons.pop(self.reasons.index('meningitis_dx'))
+            self.reasons.append('Previous Hx of Cryptococcal Meningitis')
+        if not no_amphotericin:
+            self.reasons.pop(self.reasons.index('no_amphotericin'))
+            self.reasons.append('> 48hrs of Amphotericin B')
+        if not no_fluconazole:
+            self.reasons.pop(self.reasons.index('no_fluconazole'))
+            self.reasons.append('> 48hrs of Fluconazole')

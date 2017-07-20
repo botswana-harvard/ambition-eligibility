@@ -161,10 +161,10 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         """Verifies eligibility criteria and sets model attrs.
         """
         def if_yes(value):
-            return True if value == YES else False
+            return value == YES
 
         def if_no(value):
-            return True if value == NO else False
+            return value == NO
 
         eligibility = Eligibility(
             age=self.age_in_years,

@@ -9,13 +9,12 @@ from edc_base.view_mixins import EdcBaseViewMixin
 from edc_dashboard.view_mixins import AppConfigViewMixin
 from edc_dashboard.views import ListboardView
 
-from ..models import SubjectScreening
 from .wrappers import SubjectScreeningModelWrapper
 
 
 class ListBoardView(AppConfigViewMixin, EdcBaseViewMixin, ListboardView):
 
-    model = SubjectScreening
+    model = 'ambition_screening.subject_screening'
     model_wrapper_class = SubjectScreeningModelWrapper
     listboard_url_name = django_apps.get_app_config(
         'ambition_screening').listboard_url_name

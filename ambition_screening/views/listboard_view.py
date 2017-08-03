@@ -14,8 +14,8 @@ from .wrappers import SubjectScreeningModelWrapper
 
 class ListBoardView(AppConfigViewMixin, EdcBaseViewMixin, ListboardView):
 
-    model = 'ambition_screening.subject_screening'
-    model_wrapper_class = SubjectScreeningModelWrapper
+    model = 'ambition_screening.subjectscreening'
+    model_wrapper_cls = SubjectScreeningModelWrapper
     listboard_url_name = django_apps.get_app_config(
         'ambition_screening').listboard_url_name
     paginate_by = 10

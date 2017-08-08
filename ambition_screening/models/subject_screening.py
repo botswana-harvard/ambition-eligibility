@@ -9,18 +9,21 @@ from edc_base.utils import get_utcnow
 from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, NORMAL_ABNORMAL
 from edc_constants.constants import UUID_PATTERN
 from edc_identifier.model_mixins import NonUniqueSubjectIdentifierModelMixin
+from edc_search.model_mixins import SearchSlugManager
 
 from ..eligibility import Eligibility
 from ..identifier import ScreeningIdentifier
+from .search_slug_model_mixin import SearchSlugModelMixin
 
 
-class SubjectScreeningManager(models.Manager):
+class SubjectScreeningManager(SearchSlugManager, models.Manager):
 
     def get_by_natural_key(self, screening_identifier):
         return self.get(screening_identifier=screening_identifier)
 
 
-class ScreeningIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin, models.Model):
+class ScreeningIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin,
+                                    SearchSlugModelMixin, models.Model):
 
     def update_subject_identifier_on_save(self):
         """Overridden to not set the subject identifier on save.

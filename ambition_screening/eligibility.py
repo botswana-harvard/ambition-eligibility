@@ -106,6 +106,14 @@ class Eligibility:
         if gender_evaluator.reason:
             self.reasons.pop(self.reasons.index('gender'))
             self.reasons.append(gender_evaluator.reason)
+        if not no_drug_reaction:
+            self.reasons.pop(self.reasons.index('no_drug_reaction'))
+            self.reasons.append(
+                'Previous adverse drug reaction the study medication')
+        if not no_concomitant_meds:
+            self.reasons.pop(self.reasons.index('no_concomitant_meds'))
+            self.reasons.append(
+                'Patient on Contraindicated Meds')
         if not meningitis_dx:
             self.reasons.pop(self.reasons.index('meningitis_dx'))
             self.reasons.append('Previous Hx of Cryptococcal Meningitis')

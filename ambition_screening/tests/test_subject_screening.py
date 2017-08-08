@@ -1,7 +1,7 @@
 from model_mommy import mommy
 
 from django.apps import apps as django_apps
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from edc_constants.constants import FEMALE, YES, MALE, ABNORMAL, NORMAL, NO
 
@@ -10,6 +10,7 @@ from ..eligibility import (
     MentalStatusEvaluatorError)
 
 
+@tag('rg')
 class TestSubjectScreening(TestCase):
 
     def setUp(self):
@@ -95,8 +96,9 @@ class TestSubjectScreening(TestCase):
             mental_status=ABNORMAL,
             consent_ability=False,
             pregnant=False)
-        reasons = ['no_drug_reaction', 'no_concomitant_meds',
-                   'Unable to consent.', 'Previous Hx of Cryptococcal Meningitis',
+        reasons = ['Previous adverse drug reaction the study medication',
+                   'Patient on Contraindicated Meds', 'Unable to consent.',
+                   'Previous Hx of Cryptococcal Meningitis',
                    '> 48hrs of Amphotericin B', '> 48hrs of Fluconazole']
         reasons.sort()
         reasons1 = obj.reasons

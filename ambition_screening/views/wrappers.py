@@ -27,7 +27,7 @@ class ConsentMixin:
     def consent(self):
         """Returns a wrapped saved or unsaved consent.
         """
-        consent_model_wrapper_class = SubjectConsentModelWrapper
+        consent_model_wrapper_cls = SubjectConsentModelWrapper
         try:
             consent = self.object.subjectconsent_set.get(
                 version=self.consent_object.version)
@@ -37,7 +37,7 @@ class ConsentMixin:
                 consent_identifier=get_uuid(),
                 subject_screening=self.object,
                 version=self.consent_object.version)
-        return consent_model_wrapper_class(consent)
+        return consent_model_wrapper_cls(consent)
 
 
 class SubjectScreeningModelWrapper(ConsentMixin, ModelWrapper):

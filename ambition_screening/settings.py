@@ -117,7 +117,7 @@ if 'test' in sys.argv and 'mysql' not in DATABASES.get('default').get('ENGINE'):
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Gaborone'
 
 USE_I18N = True
 

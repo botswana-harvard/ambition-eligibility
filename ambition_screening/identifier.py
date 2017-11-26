@@ -1,8 +1,8 @@
 
-from edc_identifier.simple_identifier import SimpleIdentifier
+from edc_identifier.simple_identifier import SimpleUniqueIdentifier
 
 
-class ScreeningIdentifier(SimpleIdentifier):
+class ScreeningIdentifier(SimpleUniqueIdentifier):
 
     random_string_length = 5
     identifier_type = 'screening_identifier'

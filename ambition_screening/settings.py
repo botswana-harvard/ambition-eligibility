@@ -14,7 +14,7 @@ import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+APP_NAME = 'ambition_screening'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -39,11 +39,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_crypto_fields.apps.AppConfig',
     'django_revision.apps.AppConfig',
+    'rest_framework',
+    'rest_framework.authtoken',
     'edc_base.apps.AppConfig',
     'edc_device.apps.AppConfig',
     'edc_protocol.apps.AppConfig',
     'edc_identifier.apps.AppConfig',
     'edc_registration.apps.AppConfig',
+    'edc_sync.apps.AppConfig',
     'ambition_screening.apps.AppConfig',
 ]
 
@@ -131,3 +134,21 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 KEY_PATH = os.path.join(BASE_DIR, 'crypto_fields')
+
+EDC_SYNC_SERVER_IP = None
+EDC_SYNC_FILES_REMOTE_HOST = None
+EDC_SYNC_FILES_USER = None
+EDC_SYNC_FILES_USB_VOLUME = None
+
+if 'test' in sys.argv:
+
+    class DisableMigrations:
+        def __contains__(self, item):
+            return True
+
+        def __getitem__(self, item):
+            return None
+
+    MIGRATION_MODULES = DisableMigrations()
+    PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher', )
+    DEFAULT_FILE_STORAGE = 'inmemorystorage.InMemoryStorage'

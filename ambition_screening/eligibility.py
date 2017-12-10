@@ -1,125 +1,79 @@
-from django.apps import apps as django_apps
+from .age_evaluator import AgeEvaluator
+from .early_withdrawal_evaluator import EarlyWithdrawalEvaluator
+from .gender_evaluator import GenderEvaluator
 
-from edc_constants.choices import NORMAL_ABNORMAL
-from edc_constants.constants import MALE, FEMALE
 
-
-class MentalStatusEvaluatorError(Exception):
+class EligibilityError(Exception):
     pass
-
-
-class ConsentAbilityEvaluator:
-
-    def __init__(self, mental_status=None, consent_ability=None):
-        self.mental_status = mental_status
-        if self.mental_status not in [tpl[0] for tpl in NORMAL_ABNORMAL]:
-            raise MentalStatusEvaluatorError(
-                f'Invalid mental status. Got {self.mental_status}')
-        self.consent_ability = consent_ability
-
-    @property
-    def eligible(self):
-        return self.consent_ability
-
-    @property
-    def reason(self):
-        reason = None
-        if not self.eligible:
-            reason = 'Unable to consent.'
-        return reason
-
-
-class AgeEvaluator:
-
-    def __init__(self, age=None, adult_lower=None,
-                 adult_upper=None):
-        app_config = django_apps.get_app_config('ambition_screening')
-        adult_lower = adult_lower or app_config.screening_age_adult_lower
-        adult_upper = adult_upper or app_config.screening_age_adult_upper
-
-        self.eligible = False
-        try:
-            if adult_lower <= age <= adult_upper:
-                self.eligible = True
-        except TypeError:
-            pass
-        self.reason = None
-        if not self.eligible:
-            if age < adult_lower:
-                self.reason = f'age<{adult_lower}'
-            elif age > adult_upper:
-                self.reason = f'age>{adult_upper}'
-
-
-class GenderEvaluator:
-    """Eligible if gender is valid and female not pregnant.
-    """
-
-    def __init__(self, gender=None, pregnant=None, breast_feeding=None):
-        self.eligible = False
-        self.reason = None
-        if gender == MALE:
-            self.eligible = True
-        elif gender == FEMALE and not pregnant and not breast_feeding:
-            self.eligible = True
-        if not self.eligible:
-            if pregnant:
-                self.reason = 'pregnant'
-            if breast_feeding:
-                self.reason = 'breastfeeding'
-            if gender not in [MALE, FEMALE]:
-                self.reason = 'invalid gender'
 
 
 class Eligibility:
 
     """Eligible if all criteria evaluate True.
+
+    Any key in kwargs has value True if eligible.
     """
 
-    def __init__(self, age=None, consent_ability=None, gender=None, pregnant=None,
-                 meningitis_dx=None, no_drug_reaction=None,
-                 no_concomitant_meds=None, no_amphotericin=None,
-                 no_fluconazole=None, mental_status=None, breast_feeding=None):
-        age_evaluator = AgeEvaluator(age=age)
-        gender_evaluator = GenderEvaluator(
+    def __init__(self, age=None, gender=None, pregnant=None, breast_feeding=None,
+                 alt=None, neutrophil=None, platlets=None, allow_none=None, **kwargs):
+
+        self.age_evaluator = AgeEvaluator(age=age)
+        self.gender_evaluator = GenderEvaluator(
             gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
-        consent_ability_evaluator = ConsentAbilityEvaluator(
-            mental_status=mental_status,
-            consent_ability=consent_ability)
-        criteria = dict(
-            no_drug_reaction=no_drug_reaction,
-            no_concomitant_meds=no_concomitant_meds,
-            no_amphotericin=no_amphotericin,
-            no_fluconazole=no_fluconazole,
-            meningitis_dx=meningitis_dx,
-            age=age_evaluator.eligible,
-            gender=gender_evaluator.eligible,
-            consent_ability=consent_ability_evaluator.eligible)
-        self.eligible = all(criteria.values())
-        self.reasons = [k for k, v in criteria.items() if not v]
-        if consent_ability_evaluator.reason:
-            self.reasons.pop(self.reasons.index('consent_ability'))
-            self.reasons.append(consent_ability_evaluator.reason)
-        if age_evaluator.reason:
-            self.reasons.pop(self.reasons.index('age'))
-            self.reasons.append(age_evaluator.reason)
-        if gender_evaluator.reason:
-            self.reasons.pop(self.reasons.index('gender'))
-            self.reasons.append(gender_evaluator.reason)
-        if not no_drug_reaction:
-            self.reasons.pop(self.reasons.index('no_drug_reaction'))
-            self.reasons.append(
-                'Previous adverse drug reaction the study medication')
-        if not no_concomitant_meds:
-            self.reasons.pop(self.reasons.index('no_concomitant_meds'))
-            self.reasons.append(
-                'Patient on Contraindicated Meds')
-        if not meningitis_dx:
-            self.reasons.pop(self.reasons.index('meningitis_dx'))
-            self.reasons.append('Previous Hx of Cryptococcal Meningitis')
-        if not no_amphotericin:
-            self.reasons.pop(self.reasons.index('no_amphotericin'))
-            self.reasons.append('> 48hrs of Amphotericin B')
-        if not no_fluconazole:
-            self.reasons.pop(self.reasons.index('no_fluconazole'))
-            self.reasons.append('> 48hrs of Fluconazole')
+        self.early_withdrawal_evaluator = EarlyWithdrawalEvaluator(
+            alt=alt, neutrophil=neutrophil, platlets=platlets, allow_none=allow_none)
+
+        self.criteria = dict(**kwargs)
+        if len(self.criteria) == 0:
+            raise EligibilityError('No criteria provided.')
+
+        self.criteria.update(age=self.age_evaluator.eligible)
+        self.criteria.update(gender=self.gender_evaluator.eligible)
+        self.criteria.update(
+            early_withdrawal=self.early_withdrawal_evaluator.eligible)
+        # eligible if all criteria are True
+        self.eligible = all([v for v in self.criteria.values()])
+        if self.eligible:
+            self.reasons_ineligible = None
+        else:
+            self.reasons_ineligible = {
+                k: v for k, v in self.criteria.items() if not v}
+            for k, v in self.criteria.items():
+                if not v:
+                    if k in self.custom_reasons_dict:
+                        self.reasons_ineligible.update(
+                            {k: self.custom_reasons_dict.get(k)})
+                    elif k not in ['age', 'gender', 'early_withdrawal']:
+                        self.reasons_ineligible.update({k: k})
+            if not self.age_evaluator.eligible:
+                self.reasons_ineligible.update(
+                    age=self.age_evaluator.reasons_ineligible)
+            if not self.gender_evaluator.eligible:
+                self.reasons_ineligible.update(
+                    gender=f"{' and '.join(self.gender_evaluator.reasons_ineligible)}.")
+            if not self.early_withdrawal_evaluator.eligible:
+                self.reasons_ineligible.update(
+                    {**self.early_withdrawal_evaluator.reasons_ineligible})
+
+    def __str__(self):
+        return self.eligible
+
+    @property
+    def custom_reasons_dict(self):
+        """Returns a dictionary of custom reasons for named criteria.
+        """
+        custom_reasons_dict = dict(
+            no_drug_reaction='Previous adverse drug reaction to the study medication.',
+            no_concomitant_meds='Patient on contraindicated medication.',
+            meningitis_dx='Previous Hx of Cryptococcal Meningitis.',
+            no_amphotericin='> 0.7mg/kg of Amphotericin B.',
+            no_fluconazole='> 48hrs of Fluconazole.',
+            will_hiv_test='HIV unknown or unwilling to test.',
+            consent_ability='Not able or unwilling to give ICF.')
+        for k in custom_reasons_dict:
+            if k in custom_reasons_dict and k not in self.criteria:
+                raise EligibilityError(
+                    f'Custom reasons refer to invalid named criteria, Got \'{k}\'. '
+                    f'Expected one of {list(self.criteria)}. '
+                    f'See {repr(self)}.')
+        return custom_reasons_dict

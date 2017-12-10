@@ -1,9 +1,6 @@
-from django.urls.conf import path
-
-from .admin_site import ambition_screening_admin
-
-app_name = 'ambition_screening'
-
+from django.contrib import admin
+from django.urls import path
 
 urlpatterns = [
-    path('admin/', ambition_screening_admin.urls)]
+    path('admin/', admin.site.urls),
+]

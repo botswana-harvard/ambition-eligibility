@@ -1,19 +1,20 @@
 import re
 
+from dateutil.relativedelta import relativedelta
 from django.db import models
-from uuid import uuid4
-
 from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
 from edc_base.utils import get_utcnow
-from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NO, YES, NORMAL_ABNORMAL
+from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NORMAL_ABNORMAL
 from edc_constants.constants import UUID_PATTERN
 from edc_identifier.model_mixins import NonUniqueSubjectIdentifierModelMixin
-from edc_search.model_mixins import SearchSlugManager
+from edc_reportable import IU_LITER, TEN_X_9_PER_LITER
+from edc_search.model_mixins import SearchSlugManager, SearchSlugModelMixin
+from uuid import uuid4
 
-from ..eligibility import Eligibility
-from ..identifier import ScreeningIdentifier
-from .search_slug_model_mixin import SearchSlugModelMixin
+from ..choices import PREG_YES_NO_NA
+from ..subject_screening_eligibility import SubjectScreeningEligibility
+from ..identifiers import ScreeningIdentifier
 
 
 class SubjectScreeningManager(SearchSlugManager, models.Manager):
@@ -22,8 +23,8 @@ class SubjectScreeningManager(SearchSlugManager, models.Manager):
         return self.get(screening_identifier=screening_identifier)
 
 
-class ScreeningIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin,
-                                    SearchSlugModelMixin, models.Model):
+class SubjectIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin,
+                                  SearchSlugModelMixin, models.Model):
 
     def update_subject_identifier_on_save(self):
         """Overridden to not set the subject identifier on save.
@@ -41,7 +42,9 @@ class ScreeningIdentifierModelMixin(NonUniqueSubjectIdentifierModelMixin,
         abstract = True
 
 
-class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
+class SubjectScreening(SubjectIdentifierModelMixin, BaseUuidModel):
+
+    eligibility_cls = SubjectScreeningEligibility
 
     reference = models.UUIDField(
         verbose_name="Reference",
@@ -90,13 +93,13 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         max_length=5,
         choices=YES_NO)
 
-    pregnancy_or_lactation = models.CharField(
-        verbose_name='Pregnancy or lactation (Urine βhCG)',
+    pregnancy = models.CharField(
+        verbose_name='Is the patient pregnant?',
         max_length=15,
-        choices=YES_NO_NA)
+        choices=PREG_YES_NO_NA)
 
     preg_test_date = models.DateTimeField(
-        verbose_name="Pregnancy test date",
+        verbose_name="Pregnancy test (Urine or serum βhCG) date",
         blank=True,
         null=True)
 
@@ -116,23 +119,43 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
                      'with any study drug',
         max_length=5,
         choices=YES_NO,
-        help_text='Contraindicated Meds: Cisapride Pimozide,'
-        'Terfenadine Quinidine, Astemizole Erythromycin')
+        help_text='Contraindicated Meds: Cisapride, Pimozide,'
+        'Terfenadine, Quinidine, Astemizole, Erythromycin')
 
     received_amphotericin = models.CharField(
-        verbose_name='Has received >48 hours of Amphotericin B (AmB) therapy '
-                     'prior to screening.',
+        verbose_name='Has received >48 hours of Amphotericin B '
+        '(>=0.7mg/kg/day) prior to screening.',
         max_length=5,
-        choices=YES_NO,
-
-    )
+        choices=YES_NO)
 
     received_fluconazole = models.CharField(
-        verbose_name='Has received >48 hours of fluconazole treatment (> '
-                     '400mg daily dose) prior to screening.',
+        verbose_name=(
+            'Has received >48 hours of fluconazole treatment (>= '
+            '800mg/day) prior to screening.'),
         max_length=5,
-        choices=YES_NO,
-    )
+        choices=YES_NO)
+
+    alt_result = models.IntegerField(
+        verbose_name='ALT result?',
+        null=True,
+        blank=True,
+        help_text=('Leave blank if unknown. Units: "IU/mL". '
+                   f'Ineligible if > 200 {IU_LITER}'))
+
+    neutrophil_result = models.DecimalField(
+        verbose_name='neutrophil result?',
+        decimal_places=2,
+        max_digits=4,
+        null=True,
+        blank=True,
+        help_text=(f'Leave blank if unknown. Units: "{TEN_X_9_PER_LITER}". '
+                   f'Ineligible if < 0.5  {TEN_X_9_PER_LITER}'))
+
+    platelets_result = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text=(f'Leave blank if unknown. Units: " {TEN_X_9_PER_LITER}". '
+                   f'Ineligible if < 50 {TEN_X_9_PER_LITER}'))
 
     eligible = models.BooleanField(
         default=False,
@@ -144,46 +167,37 @@ class SubjectScreening(ScreeningIdentifierModelMixin, BaseUuidModel):
         null=True,
         editable=False)
 
+    consented = models.BooleanField(
+        default=False,
+        editable=False)
+
     objects = SubjectScreeningManager()
 
     history = HistoricalRecords()
 
-    def natural_key(self):
-        return (self.screening_identifier,)
+    def __str__(self):
+        return f'{self.screening_identifier} {self.gender} {self.age_in_years}'
 
     def save(self, *args, **kwargs):
-        self.verify_eligibility()
+        eligibility_obj = self.eligibility_cls(model_obj=self, allow_none=True)
+        self.eligible = eligibility_obj.eligible
+        if not self.eligible:
+            reasons_ineligible = [
+                v for v in eligibility_obj.reasons_ineligible.values() if v]
+            reasons_ineligible.sort()
+            self.reasons_ineligible = ','.join(reasons_ineligible)
+        else:
+            self.reasons_ineligible = None
         if not self.id:
             self.screening_identifier = ScreeningIdentifier().identifier
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f'{self.screening_identifier} {self.gender} {self.age_in_years}'
+    def natural_key(self):
+        return (self.screening_identifier,)
 
-    def verify_eligibility(self):
-        """Verifies eligibility criteria and sets model attrs.
-        """
-        def if_yes(value):
-            return value == YES
+    def get_search_slug_fields(self):
+        return ['screening_identifier', 'subject_identifier', 'reference']
 
-        def if_no(value):
-            return value == NO
-
-        eligibility = Eligibility(
-            age=self.age_in_years,
-            gender=self.gender,
-            consent_ability=if_yes(self.consent_ability),
-            mental_status=self.mental_status,
-            meningitis_dx=if_yes(self.meningitis_dx),
-            pregnant=if_yes(self.pregnancy_or_lactation),
-            breast_feeding=if_yes(self.breast_feeding),
-            no_drug_reaction=if_no(self.previous_drug_reaction),
-            no_concomitant_meds=if_no(self.contraindicated_meds),
-            no_amphotericin=if_no(self.received_amphotericin),
-            no_fluconazole=if_no(self.received_fluconazole))
-        self.reasons_ineligible = ','.join(eligibility.reasons)
-        self.eligible = eligibility.eligible
-
-    class Meta:
-        app_label = 'ambition_screening'
-        verbose_name = 'Subject Screening'
+    @property
+    def estimated_dob(self):
+        return get_utcnow().date() - relativedelta(years=self.age_in_years)

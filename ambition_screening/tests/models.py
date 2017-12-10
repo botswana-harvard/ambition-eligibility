@@ -1,8 +1,18 @@
 from django.db import models
 from edc_reportable.units import TEN_X_9_PER_LITER, IU_LITER
+from django.db.models.deletion import PROTECT
+
+
+class SubjectVisit(models.Model):
+
+    subject_identifier = models.CharField(max_length=50)
+
+    visit_code = models.CharField(max_length=25)
 
 
 class BloodResult(models.Model):
+
+    subject_visit = models.ForeignKey(SubjectVisit, on_delete=PROTECT)
 
     platelets = models.IntegerField(
         null=True,

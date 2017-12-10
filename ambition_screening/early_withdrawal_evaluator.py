@@ -1,8 +1,11 @@
 from ambition_visit_schedule import DAY1
+from collections import OrderedDict
 from django.apps import apps as django_apps
 from django.contrib import messages
-from edc_reportable import IU_LITER, TEN_X_9_PER_LITER
 from django.core.exceptions import ObjectDoesNotExist
+from edc_reportable import IU_LITER, TEN_X_9_PER_LITER
+
+from .reportables import alt_ref, neutrophil_ref, platlets_ref
 
 
 class EarlyWithdrawalEvaluator:
@@ -15,7 +18,7 @@ class EarlyWithdrawalEvaluator:
         self._day_one_blood_results = None
         self._subject_screening = None
         self.reasons_ineligible = {}
-        self.blood_results = dict(
+        self.blood_results = OrderedDict(
             alt=alt, neutrophil=neutrophil, platlets=platlets)
 
         self.screening_identifier = screening_identifier
@@ -25,6 +28,7 @@ class EarlyWithdrawalEvaluator:
         if self.day_one_blood_results:
             self.update_blood_results(self.day_one_blood_results)
 
+        alt, neutrophil, platlets = [v for v in self.blood_results.values()]
         if (not alt and not neutrophil and not platlets and allow_none):
             self.eligible = True
             if request:
@@ -33,32 +37,22 @@ class EarlyWithdrawalEvaluator:
         elif not alt and not neutrophil and not platlets and not allow_none:
             self.eligible = False
         else:
-            failed = []
-            if alt and int(alt) > 200:
-                self.reasons_ineligible.update(alt=f'ALT>200 {IU_LITER}.')
-                failed.append(1)
-            if neutrophil and float(neutrophil) < 0.5:
+            if alt and not alt_ref.in_bounds(value=float(alt), units=IU_LITER):
                 self.reasons_ineligible.update(
-                    pmns=f'Neutrophil<0.5 {TEN_X_9_PER_LITER}.')
-                failed.append(1)
-            if platlets and int(platlets) < 50:
+                    alt=f'High value: {alt}. {alt.description()}.')
+            if neutrophil and not neutrophil_ref.in_bounds(float(neutrophil), units=TEN_X_9_PER_LITER):
                 self.reasons_ineligible.update(
-                    platlets=f'Platelets<50 {TEN_X_9_PER_LITER}.')
-                failed.append(1)
-            self.eligible = True if not failed else False
-
-    def update_blood_results(self, obj):
-        if obj.alt:
-            self.blood_results.update(alt=obj.alt)
-        if obj.neutrophil:
-            self.blood_results.update(neutrophil=obj.neutrophil)
-        if obj.platlets:
-            self.blood_results.update(platlets=obj.platlets)
+                    platlets=f'Low value: {neutrophil}. {neutrophil.description()}.')
+            if platlets and not platlets_ref.in_bounds(float(platlets), units=TEN_X_9_PER_LITER):
+                self.reasons_ineligible.update(
+                    platlets=f'Low value: {platlets}. {platlets_ref.description()}.')
+            self.eligible = (
+                True if len(self.reasons_ineligible) == 0 else False)
 
     @property
     def subject_screening(self):
         if not self._subject_screening:
-            model_cls = django_apps.get_model(self.blood_result_model)
+            model_cls = django_apps.get_model(self.subject_screening_model)
             try:
                 self._subject_screening = model_cls.objects.get(
                     screening_identifier=self.screening_identifier)
@@ -77,3 +71,11 @@ class EarlyWithdrawalEvaluator:
             except ObjectDoesNotExist:
                 pass
         return self._day_one_blood_results
+
+    def update_blood_results(self, obj):
+        if obj.alt:
+            self.blood_results.update(alt=obj.alt)
+        if obj.neutrophil:
+            self.blood_results.update(neutrophil=obj.neutrophil)
+        if obj.platlets:
+            self.blood_results.update(platlets=obj.platlets)

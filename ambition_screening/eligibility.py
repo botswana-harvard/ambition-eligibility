@@ -1,6 +1,6 @@
-from .age_evaluator import AgeEvaluator
 from .early_withdrawal_evaluator import EarlyWithdrawalEvaluator
 from .gender_evaluator import GenderEvaluator
+from .reportables import age_evaluator
 
 
 class EligibilityError(Exception):
@@ -17,7 +17,6 @@ class Eligibility:
     def __init__(self, age=None, gender=None, pregnant=None, breast_feeding=None,
                  alt=None, neutrophil=None, platlets=None, allow_none=None, **kwargs):
 
-        self.age_evaluator = AgeEvaluator(age=age)
         self.gender_evaluator = GenderEvaluator(
             gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
         self.early_withdrawal_evaluator = EarlyWithdrawalEvaluator(
@@ -27,7 +26,7 @@ class Eligibility:
         if len(self.criteria) == 0:
             raise EligibilityError('No criteria provided.')
 
-        self.criteria.update(age=self.age_evaluator.eligible)
+        self.criteria.update(age=age_evaluator.eligible(age))
         self.criteria.update(gender=self.gender_evaluator.eligible)
         self.criteria.update(
             early_withdrawal=self.early_withdrawal_evaluator.eligible)
@@ -45,9 +44,9 @@ class Eligibility:
                             {k: self.custom_reasons_dict.get(k)})
                     elif k not in ['age', 'gender', 'early_withdrawal']:
                         self.reasons_ineligible.update({k: k})
-            if not self.age_evaluator.eligible:
+            if not age_evaluator.eligible(age):
                 self.reasons_ineligible.update(
-                    age=self.age_evaluator.reasons_ineligible)
+                    age=age_evaluator.reasons_ineligible)
             if not self.gender_evaluator.eligible:
                 self.reasons_ineligible.update(
                     gender=f"{' and '.join(self.gender_evaluator.reasons_ineligible)}.")

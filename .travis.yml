@@ -6,17 +6,12 @@ python:
 services:
 - mysql
 
-addons:
-  apt_packages:
-     - libcups2-dev
-
 branches:
   only:
   - develop
 
 install:
 - pip install --upgrade pip
-- pip install pycups
 - pip install -r requirements.txt
 - pip install flake8
 - pip install coveralls

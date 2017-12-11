@@ -2,7 +2,10 @@ from django.test import TestCase, tag
 from edc_reportable.units import IU_LITER, TEN_X_9_PER_LITER
 
 from ..early_withdrawal_evaluator import EarlyWithdrawalEvaluator
-from ..early_withdrawal_evaluator import alt_ref, neutrophil_ref, platlets_ref
+from ..early_withdrawal_evaluator import alt_ref, neutrophil_ref, platelets_ref
+from model_mommy import mommy
+from ambition_screening.tests.models import SubjectVisit, BloodResult
+from ambition_visit_schedule.constants import DAY1
 
 
 EarlyWithdrawalEvaluator.blood_result_model = 'ambition_screening.bloodresult'
@@ -10,21 +13,18 @@ EarlyWithdrawalEvaluator.blood_result_model = 'ambition_screening.bloodresult'
 
 class TestEarlyWithdrawalEvaluator(TestCase):
 
-    @tag('7')
     def test_early_withdrawal_criteria_no(self):
-        opts = dict(alt=None, neutrophil=None, platlets=None)
+        opts = dict(alt=None, neutrophil=None, platelets=None)
         obj = EarlyWithdrawalEvaluator(**opts)
         self.assertFalse(obj.eligible)
 
-    @tag('7')
     def test_early_withdrawal_criteria_with_none(self):
-        opts = dict(alt=None, neutrophil=None, platlets=None, allow_none=True)
+        opts = dict(alt=None, neutrophil=None, platelets=None, allow_none=True)
         obj = EarlyWithdrawalEvaluator(**opts)
         self.assertTrue(obj.eligible)
 
-    @tag('7')
     def test_early_withdrawal_criteria_ok(self):
-        opts = dict(alt=200, neutrophil=0.5, platlets=50, allow_none=True)
+        opts = dict(alt=200, neutrophil=0.5, platelets=50, allow_none=True)
         obj = EarlyWithdrawalEvaluator(**opts)
         self.assertTrue(obj.eligible)
 
@@ -45,9 +45,52 @@ class TestEarlyWithdrawalEvaluator(TestCase):
         self.assertTrue(neutrophil_ref.in_bounds(0.6, units=TEN_X_9_PER_LITER))
         print(neutrophil_ref.description())
 
-        # platlets < 50 not eligible
-        self.assertFalse(platlets_ref.in_bounds(48, units=TEN_X_9_PER_LITER))
-        self.assertFalse(platlets_ref.in_bounds(49, units=TEN_X_9_PER_LITER))
-        self.assertTrue(platlets_ref.in_bounds(50, units=TEN_X_9_PER_LITER))
-        self.assertTrue(platlets_ref.in_bounds(51, units=TEN_X_9_PER_LITER))
-        print(platlets_ref.description())
+        # platelets < 50 not eligible
+        self.assertFalse(platelets_ref.in_bounds(48, units=TEN_X_9_PER_LITER))
+        self.assertFalse(platelets_ref.in_bounds(49, units=TEN_X_9_PER_LITER))
+        self.assertTrue(platelets_ref.in_bounds(50, units=TEN_X_9_PER_LITER))
+        self.assertTrue(platelets_ref.in_bounds(51, units=TEN_X_9_PER_LITER))
+        print(platelets_ref.description())
+
+    def test_with_day1_blood_result2(self):
+        subject_screening = mommy.make_recipe(
+            'ambition_screening.subjectscreening')
+        subject_identifier = '12345'
+        subject_visit = SubjectVisit.objects.create(
+            subject_identifier=subject_identifier,
+            screening_identifier=subject_screening.screening_identifier,
+            visit_code=DAY1)
+
+        blood_result = BloodResult.objects.create(
+            subject_visit=subject_visit,
+            platelets=49)
+        obj = EarlyWithdrawalEvaluator(subject_identifier=subject_identifier)
+        self.assertFalse(obj.eligible)
+        self.assertIn('platelets', obj.reasons_ineligible)
+
+        blood_result.delete()
+        blood_result = BloodResult.objects.create(
+            subject_visit=subject_visit,
+            platelets=49, alt=201)
+        obj = EarlyWithdrawalEvaluator(subject_identifier=subject_identifier)
+        self.assertFalse(obj.eligible)
+        self.assertIn('alt', obj.reasons_ineligible)
+        self.assertIn('platelets', obj.reasons_ineligible)
+
+        blood_result.delete()
+        blood_result = BloodResult.objects.create(
+            subject_visit=subject_visit,
+            platelets=49, alt=201, neutrophil=0.3)
+        obj = EarlyWithdrawalEvaluator(subject_identifier=subject_identifier)
+        self.assertFalse(obj.eligible)
+        self.assertIn('alt', obj.reasons_ineligible)
+        self.assertIn('platelets', obj.reasons_ineligible)
+        self.assertIn('neutrophil', obj.reasons_ineligible)
+
+        blood_result.delete()
+        blood_result = BloodResult.objects.create(
+            subject_visit=subject_visit,
+            platelets=50, alt=200, neutrophil=0.5)
+        obj = EarlyWithdrawalEvaluator(subject_identifier=subject_identifier)
+        self.assertTrue(obj.eligible)
+        self.assertFalse(obj.reasons_ineligible)

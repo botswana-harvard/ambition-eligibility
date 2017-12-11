@@ -48,8 +48,8 @@ class SubjectScreeningAdmin(ModelAdminMixin, admin.ModelAdmin):
         }),
         ('Blood Results', {
             'fields': (
-                'alt_result',
-                'neutrophil_result',
-                'platelets_result')
+                'alt',
+                'neutrophil',
+                'platelets')
         }),
     )

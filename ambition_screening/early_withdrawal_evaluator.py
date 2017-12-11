@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from edc_reportable import IU_LITER, TEN_X_9_PER_LITER
 
-from .reportables import alt_ref, neutrophil_ref, platlets_ref
+from .reportables import alt_ref, neutrophil_ref, platelets_ref
 
 
 class EarlyWithdrawalEvaluator:
@@ -13,13 +13,14 @@ class EarlyWithdrawalEvaluator:
     subject_screening_model = 'ambition_screening.subjectscreening'
     blood_result_model = 'ambition_subject.bloodresult'
 
-    def __init__(self, alt=None, neutrophil=None, platlets=None, allow_none=None,
-                 screening_identifier=None, subject_identifier=None, request=None):
+    def __init__(self, alt=None, neutrophil=None, platelets=None, allow_none=None,
+                 screening_identifier=None, subject_identifier=None, request=None,
+                 subject_screening=None):
         self._day_one_blood_results = None
-        self._subject_screening = None
+        self._subject_screening = subject_screening
         self.reasons_ineligible = {}
         self.blood_results = OrderedDict(
-            alt=alt, neutrophil=neutrophil, platlets=platlets)
+            alt=alt, neutrophil=neutrophil, platelets=platelets)
 
         self.screening_identifier = screening_identifier
         self.subject_identifier = subject_identifier
@@ -28,24 +29,29 @@ class EarlyWithdrawalEvaluator:
         if self.day_one_blood_results:
             self.update_blood_results(self.day_one_blood_results)
 
-        alt, neutrophil, platlets = [v for v in self.blood_results.values()]
-        if (not alt and not neutrophil and not platlets and allow_none):
+        alt, neutrophil, platelets = [v for v in self.blood_results.values()]
+        if (not alt and not neutrophil and not platelets and allow_none):
             self.eligible = True
             if request:
                 messages.warning(
                     request, 'Screening blood results are required.')
-        elif not alt and not neutrophil and not platlets and not allow_none:
+        elif not alt and not neutrophil and not platelets and not allow_none:
             self.eligible = False
         else:
             if alt and not alt_ref.in_bounds(value=float(alt), units=IU_LITER):
                 self.reasons_ineligible.update(
-                    alt=f'High value: {alt}. {alt.description()}.')
-            if neutrophil and not neutrophil_ref.in_bounds(float(neutrophil), units=TEN_X_9_PER_LITER):
+                    alt=f'High ALT: {alt}. Ref: {alt_ref.description()}.')
+            if neutrophil and not neutrophil_ref.in_bounds(
+                    float(neutrophil), units=TEN_X_9_PER_LITER):
                 self.reasons_ineligible.update(
-                    platlets=f'Low value: {neutrophil}. {neutrophil.description()}.')
-            if platlets and not platlets_ref.in_bounds(float(platlets), units=TEN_X_9_PER_LITER):
+                    neutrophil=(
+                        f'Low neutrophil: {neutrophil}. Ref: '
+                        f'{neutrophil_ref.description()}.'))
+            if platelets and not platelets_ref.in_bounds(
+                    float(platelets), units=TEN_X_9_PER_LITER):
                 self.reasons_ineligible.update(
-                    platlets=f'Low value: {platlets}. {platlets_ref.description()}.')
+                    platelets=(f'Low platelets: {platelets}. '
+                               f'Ref: {platelets_ref.description()}.'))
             self.eligible = (
                 True if len(self.reasons_ineligible) == 0 else False)
 
@@ -77,5 +83,5 @@ class EarlyWithdrawalEvaluator:
             self.blood_results.update(alt=obj.alt)
         if obj.neutrophil:
             self.blood_results.update(neutrophil=obj.neutrophil)
-        if obj.platlets:
-            self.blood_results.update(platlets=obj.platlets)
+        if obj.platelets:
+            self.blood_results.update(platelets=obj.platelets)

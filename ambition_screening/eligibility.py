@@ -11,25 +11,31 @@ class Eligibility:
 
     """Eligible if all criteria evaluate True.
 
-    Any key in kwargs has value True if eligible.
+    Any key in `additional_criteria` has value True if eligible.
     """
+    gender_evaluator_cls = GenderEvaluator
+    early_withdrawal_evaluator_cls = EarlyWithdrawalEvaluator
+    age_evaluator = age_evaluator
 
     def __init__(self, age=None, gender=None, pregnant=None, breast_feeding=None,
-                 alt=None, neutrophil=None, platlets=None, allow_none=None, **kwargs):
+                 alt=None, neutrophil=None, platelets=None, allow_none=None,
+                 subject_screening=None,
+                 **additional_criteria):
 
-        self.gender_evaluator = GenderEvaluator(
-            gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
-        self.early_withdrawal_evaluator = EarlyWithdrawalEvaluator(
-            alt=alt, neutrophil=neutrophil, platlets=platlets, allow_none=allow_none)
-
-        self.criteria = dict(**kwargs)
+        self.criteria = dict(**additional_criteria)
         if len(self.criteria) == 0:
             raise EligibilityError('No criteria provided.')
 
-        self.criteria.update(age=age_evaluator.eligible(age))
+        self.gender_evaluator = self.gender_evaluator_cls(
+            gender=gender, pregnant=pregnant, breast_feeding=breast_feeding)
+        self.early_withdrawal_evaluator = self.early_withdrawal_evaluator_cls(
+            alt=alt, neutrophil=neutrophil, platelets=platelets, allow_none=allow_none,
+            subject_screening=subject_screening)
+        self.criteria.update(age=self.age_evaluator.eligible(age))
         self.criteria.update(gender=self.gender_evaluator.eligible)
         self.criteria.update(
             early_withdrawal=self.early_withdrawal_evaluator.eligible)
+
         # eligible if all criteria are True
         self.eligible = all([v for v in self.criteria.values()])
         if self.eligible:
@@ -44,9 +50,9 @@ class Eligibility:
                             {k: self.custom_reasons_dict.get(k)})
                     elif k not in ['age', 'gender', 'early_withdrawal']:
                         self.reasons_ineligible.update({k: k})
-            if not age_evaluator.eligible(age):
+            if not self.age_evaluator.eligible(age):
                 self.reasons_ineligible.update(
-                    age=age_evaluator.reasons_ineligible)
+                    age=self.age_evaluator.reasons_ineligible)
             if not self.gender_evaluator.eligible:
                 self.reasons_ineligible.update(
                     gender=f"{' and '.join(self.gender_evaluator.reasons_ineligible)}.")

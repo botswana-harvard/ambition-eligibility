@@ -5,6 +5,8 @@ from django.db.models.deletion import PROTECT
 
 class SubjectVisit(models.Model):
 
+    screening_identifier = models.CharField(max_length=50)
+
     subject_identifier = models.CharField(max_length=50)
 
     visit_code = models.CharField(max_length=25)

@@ -15,7 +15,7 @@ class TestEligibility(TestCase):
             breast_feeding=False,
             alt=None,
             neutrophil=None,
-            platlets=None,
+            platelets=None,
             allow_none=True)
 
         self.criteria = dict(

@@ -19,6 +19,7 @@ class TestIdentifiers(TestCase):
         except IdentifierHistory.DoesNotExist:
             self.fail('IdentifierHistory.DoesNotExist unexpectedly raised.')
 
+    @tag('2')
     def test_model_allocates_identifier(self):
         obj = mommy.make_recipe('ambition_screening.subjectscreening')
         self.assertIsNotNone(obj.screening_identifier)

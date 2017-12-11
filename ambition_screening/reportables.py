@@ -59,8 +59,8 @@ neutrophil_ref = NormalReference(
 )
 
 
-platlets_ref = NormalReference(
-    name='platlets',
+platelets_ref = NormalReference(
+    name='platelets',
     lower=50,
     lower_inclusive=True,
     units=TEN_X_9_PER_LITER,

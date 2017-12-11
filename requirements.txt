@@ -7,3 +7,4 @@ git+https://github.com/botswana-harvard/edc-identifier.git@develop#egg=edc-ident
 git+https://github.com/botswana-harvard/edc-model-admin.git@develop#egg=edc_model_admin
 git+https://github.com/botswana-harvard/edc-protocol.git@develop#egg=edc-protocol
 git+https://github.com/botswana-harvard/edc-reportable.git@develop#egg=edc_reportable
+git+https://github.com/erikvw/django-revision.git@develop#egg=django_revision

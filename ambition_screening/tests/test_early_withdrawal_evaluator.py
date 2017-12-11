@@ -1,11 +1,11 @@
+from ambition_visit_schedule.constants import DAY1
 from django.test import TestCase, tag
 from edc_reportable.units import IU_LITER, TEN_X_9_PER_LITER
+from model_mommy import mommy
 
 from ..early_withdrawal_evaluator import EarlyWithdrawalEvaluator
 from ..early_withdrawal_evaluator import alt_ref, neutrophil_ref, platelets_ref
-from model_mommy import mommy
-from ambition_screening.tests.models import SubjectVisit, BloodResult
-from ambition_visit_schedule.constants import DAY1
+from .models import SubjectVisit, BloodResult
 
 
 EarlyWithdrawalEvaluator.blood_result_model = 'ambition_screening.bloodresult'

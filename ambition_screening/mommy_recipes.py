@@ -1,3 +1,4 @@
+from django.contrib.sites.models import Site
 from edc_base.utils import get_utcnow
 from edc_constants.constants import NOT_APPLICABLE, YES, NO, MALE, NORMAL
 from faker import Faker
@@ -21,4 +22,5 @@ subjectscreening = Recipe(
     previous_drug_reaction=NO,
     contraindicated_meds=NO,
     received_amphotericin=NO,
-    received_fluconazole=NO)
+    received_fluconazole=NO,
+    site=Site.objects.get_current())

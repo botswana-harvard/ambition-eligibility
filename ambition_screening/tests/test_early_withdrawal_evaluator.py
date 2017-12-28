@@ -1,5 +1,6 @@
 from ambition_visit_schedule.constants import DAY1
 from django.test import TestCase, tag
+from edc_base.tests import SiteTestCaseMixin
 from edc_reportable.units import IU_LITER, TEN_X_9_PER_LITER
 from model_mommy import mommy
 
@@ -11,7 +12,7 @@ from .models import SubjectVisit, BloodResult
 EarlyWithdrawalEvaluator.blood_result_model = 'ambition_screening.bloodresult'
 
 
-class TestEarlyWithdrawalEvaluator(TestCase):
+class TestEarlyWithdrawalEvaluator(SiteTestCaseMixin, TestCase):
 
     def test_early_withdrawal_criteria_no(self):
         opts = dict(alt=None, neutrophil=None, platelets=None)
@@ -34,7 +35,6 @@ class TestEarlyWithdrawalEvaluator(TestCase):
         self.assertTrue(alt_ref.in_bounds(200, units=IU_LITER))
         self.assertFalse(alt_ref.in_bounds(201, units=IU_LITER))
         self.assertFalse(alt_ref.in_bounds(202, units=IU_LITER))
-        print(alt_ref.description())
 
         # neutrophil < 0.5 not eligible
         self.assertFalse(neutrophil_ref.in_bounds(
@@ -43,14 +43,12 @@ class TestEarlyWithdrawalEvaluator(TestCase):
             0.4, units=TEN_X_9_PER_LITER))
         self.assertTrue(neutrophil_ref.in_bounds(0.5, units=TEN_X_9_PER_LITER))
         self.assertTrue(neutrophil_ref.in_bounds(0.6, units=TEN_X_9_PER_LITER))
-        print(neutrophil_ref.description())
 
         # platelets < 50 not eligible
         self.assertFalse(platelets_ref.in_bounds(48, units=TEN_X_9_PER_LITER))
         self.assertFalse(platelets_ref.in_bounds(49, units=TEN_X_9_PER_LITER))
         self.assertTrue(platelets_ref.in_bounds(50, units=TEN_X_9_PER_LITER))
         self.assertTrue(platelets_ref.in_bounds(51, units=TEN_X_9_PER_LITER))
-        print(platelets_ref.description())
 
     def test_with_day1_blood_result2(self):
         subject_screening = mommy.make_recipe(

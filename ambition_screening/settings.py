@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'edc_identifier.apps.AppConfig',
     'edc_device.apps.AppConfig',
     'ambition_screening.apps.AppConfig',

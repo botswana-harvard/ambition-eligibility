@@ -1,5 +1,6 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, tag
-from edc_identifier.models import IdentifierHistory
+from edc_identifier.models import IdentifierModel
 from model_mommy import mommy
 
 from ..identifiers import ScreeningIdentifier
@@ -15,11 +16,10 @@ class TestIdentifiers(TestCase):
     def test_identifier_history(self):
         identifier = ScreeningIdentifier()
         try:
-            IdentifierHistory.objects.get(identifier=identifier.identifier)
-        except IdentifierHistory.DoesNotExist:
+            IdentifierModel.objects.get(identifier=identifier.identifier)
+        except ObjectDoesNotExist:
             self.fail('IdentifierHistory.DoesNotExist unexpectedly raised.')
 
-    @tag('2')
     def test_model_allocates_identifier(self):
         obj = mommy.make_recipe('ambition_screening.subjectscreening')
         self.assertIsNotNone(obj.screening_identifier)

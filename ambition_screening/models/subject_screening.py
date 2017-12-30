@@ -46,6 +46,8 @@ class SubjectScreening(SubjectIdentifierModelMixin, SiteModelMixin, BaseUuidMode
 
     eligibility_cls = SubjectScreeningEligibility
 
+    identifier_cls = ScreeningIdentifier
+
     reference = models.UUIDField(
         verbose_name='Reference',
         unique=True,
@@ -190,7 +192,7 @@ class SubjectScreening(SubjectIdentifierModelMixin, SiteModelMixin, BaseUuidMode
         else:
             self.reasons_ineligible = None
         if not self.id:
-            self.screening_identifier = ScreeningIdentifier().identifier
+            self.screening_identifier = self.identifier_cls().identifier
         super().save(*args, **kwargs)
 
     def natural_key(self):

@@ -3,7 +3,8 @@ import re
 from dateutil.relativedelta import relativedelta
 from django.db import models
 from edc_base.model_managers import HistoricalRecords
-from edc_base.model_mixins import BaseUuidModel, SiteModelMixin
+from edc_base.model_mixins import BaseUuidModel
+from edc_base.sites.site_model_mixin import SiteModelMixin
 from edc_base.utils import get_utcnow
 from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NORMAL_ABNORMAL
 from edc_constants.constants import UUID_PATTERN

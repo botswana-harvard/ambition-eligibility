@@ -73,7 +73,8 @@ class EarlyWithdrawalEvaluator:
             try:
                 self._day_one_blood_results = model_cls.objects.get(
                     subject_visit__subject_identifier=self.subject_identifier,
-                    subject_visit__visit_code=DAY1)
+                    subject_visit__visit_code=DAY1,
+                    subject_visit__visit_code_sequence=0)
             except ObjectDoesNotExist:
                 pass
         return self._day_one_blood_results

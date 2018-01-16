@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 from django.db import models
 from edc_base.model_managers import HistoricalRecords
 from edc_base.model_mixins import BaseUuidModel
+from edc_base.sites.managers import CurrentSiteManager
 from edc_base.sites.site_model_mixin import SiteModelMixin
 from edc_base.utils import get_utcnow
 from edc_constants.choices import GENDER, YES_NO, YES_NO_NA, NORMAL_ABNORMAL
@@ -175,6 +176,8 @@ class SubjectScreening(SubjectIdentifierModelMixin, SiteModelMixin, BaseUuidMode
         default=False,
         editable=False)
 
+    on_site = CurrentSiteManager()
+
     objects = SubjectScreeningManager()
 
     history = HistoricalRecords()
@@ -197,7 +200,8 @@ class SubjectScreening(SubjectIdentifierModelMixin, SiteModelMixin, BaseUuidMode
         super().save(*args, **kwargs)
 
     def natural_key(self):
-        return (self.screening_identifier,)
+        return (self.screening_identifier, )
+    natural_key.dependencies = ['sites.Site']
 
     def get_search_slug_fields(self):
         return ['screening_identifier', 'subject_identifier', 'reference']

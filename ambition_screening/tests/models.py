@@ -11,6 +11,8 @@ class SubjectVisit(models.Model):
 
     visit_code = models.CharField(max_length=25)
 
+    visit_code_sequence = models.IntegerField(default=0)
+
 
 class BloodResult(models.Model):
 

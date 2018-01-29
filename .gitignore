@@ -1,3 +1,5 @@
+htmcov/*
+etc/*
 .pydevproject
 .project
 .settings
